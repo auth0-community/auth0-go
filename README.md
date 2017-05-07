@@ -23,7 +23,7 @@ secret, _ := base64.URLEncoding.DecodeString(os.Getenv("AUTH0_CLIENT_SECRET"))
 secretProvider := auth0.NewKeyProvider(secret)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 
-configuration := auth0.NewConfiguration(secretProvider, audience, "https://mydomain.eu.auth0.com/", jose.HS256)
+configuration := auth0.NewConfiguration(secretProvider, []string{audience}, "https://mydomain.eu.auth0.com/", jose.HS256)
 validator := auth0.NewValidator(configuration)
 
 
@@ -68,7 +68,7 @@ secret, _ := LoadPublicKey(sharedKey)
 secretProvider := auth0.NewKeyProvider(secret)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 
-configuration := auth0.NewConfiguration(secretProvider, audience, "https://mydomain.eu.auth0.com/", jose.RS256)
+configuration := auth0.NewConfiguration(secretProvider, []string{audience}, "https://mydomain.eu.auth0.com/", jose.RS256)
 validator := auth0.NewValidator(configuration)
 
 token, err := validator.ValidateRequest(r)
@@ -83,7 +83,7 @@ if err != nil {
    
 client := NewJWKClient(JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"})
 audience := os.Getenv("AUTH0_CLIENT_ID")
-configuration := NewConfiguration(client, audience, "https://mydomain.eu.auth0.com/", jose.RS256)
+configuration := NewConfiguration(client, []string{audience}, "https://mydomain.eu.auth0.com/", jose.RS256)
 validator := NewValidator(configuration)
 
 token, err := validator.ValidateRequest(r)
