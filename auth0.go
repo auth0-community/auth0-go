@@ -1,10 +1,11 @@
 package auth0
 
 import (
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
 	"net/http"
 	"time"
+
+	"gopkg.in/square/go-jose.v2"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // SecretProvider will provide everything
@@ -41,15 +42,10 @@ type Configuration struct {
 }
 
 // NewConfiguration creates a configuration for server
-func NewConfiguration(provider SecretProvider, audience, issuer string, method jose.SignatureAlgorithm) Configuration {
-	var aud []string
-	if audience != "" {
-		aud = []string{audience}
-	}
-
+func NewConfiguration(provider SecretProvider, audience []string, issuer string, method jose.SignatureAlgorithm) Configuration {
 	return Configuration{
 		secretProvider: provider,
-		expectedClaims: jwt.Expected{Issuer: issuer, Audience: aud},
+		expectedClaims: jwt.Expected{Issuer: issuer, Audience: audience},
 		signIn:         method,
 		exp:            0,
 		nbf:            0,

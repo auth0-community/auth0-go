@@ -1,13 +1,23 @@
 package auth0
 
 import (
-	"sync"
-	"net/http"
-	"github.com/square/go-jose"
-	"strings"
-	"github.com/go-errors/errors"
 	"encoding/json"
+	"net/http"
+	"strings"
+	"sync"
+
+	"github.com/go-errors/errors"
+	"github.com/square/go-jose"
 )
+
+var (
+	DefaultOptions        = JWKClientOptions{""}
+	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
+	ErrNoKeyFound         = errors.New("No Keys has been found")
+	ErrInvalidTokenHeader = errors.New("No valid header found")
+	ErrInvalidAlgorithm   = errors.New("Only RS252 is supported")
+)
+
 type JWKClientOptions struct {
 	URI string
 }
@@ -16,21 +26,13 @@ type JWKS struct {
 	Keys []jose.JsonWebKey `json:"keys"`
 }
 
-var (
-	DefaultOptions = JWKClientOptions{""}
-	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
-	ErrNoKeyFound = errors.New("No Keys has been found")
-	ErrInvalidTokenHeader = errors.New("No valid header found")
-	ErrInvalidAlgorithm = errors.New("Only RS252 is supported")
-)
-
 type JWKClient struct {
-	keys map[string]jose.JsonWebKey
-	mu   sync.Mutex
+	keys    map[string]jose.JsonWebKey
+	mu      sync.Mutex
 	options JWKClientOptions
 }
 
-func NewJWKClient(options JWKClientOptions) *JWKClient{
+func NewJWKClient(options JWKClientOptions) *JWKClient {
 	return &JWKClient{keys: map[string]jose.JsonWebKey{}, options: options}
 }
 
