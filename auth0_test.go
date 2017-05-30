@@ -23,7 +23,7 @@ func validConfiguration(configuration Configuration, tokenRaw string) error {
 
 func TestValidatorFull(t *testing.T) {
 
-	token := getTestToken(defaultAudience, defaultIssuer, time.Now(), jose.HS256, defaultSecret)
+	token := getTestToken(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
 	err := validConfiguration(configuration, token)
 
@@ -41,21 +41,13 @@ func TestValidatorFull(t *testing.T) {
 func TestValidatorEmpty(t *testing.T) {
 
 	configuration := NewConfiguration(defaultSecretProvider, []string{}, "", jose.HS256)
-	validToken := getTestToken([]string{}, "", time.Now(), jose.HS256, defaultSecret)
+	validToken := getTestToken([]string{}, "", time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 
 	err := validConfiguration(configuration, validToken)
 
 	if err != nil {
 		t.Error(err)
 	}
-
-	otherValidToken := `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkcWRxd2Rxd2Rxd2RxIiwibmFtZSI6ImRxd2Rxd2Rxd2Rxd2Rxd2QiLCJhZG1pbiI6ZmFsc2V9.-MZNG6n5KtLIG4Tsa6oi25zZK5oadmrebS-1r1Ln82c`
-	err = validConfiguration(configuration, otherValidToken)
-
-	if err != nil {
-		t.Error(err)
-	}
-
 }
 
 func TestValidatorPartial(t *testing.T) {
@@ -83,7 +75,7 @@ func TestInvalidProvider(t *testing.T) {
 	provider := SecretProviderFunc(invalidProvider)
 	configuration := NewConfiguration(provider, []string{"required"}, "", jose.HS256)
 
-	token := getTestToken([]string{"required"}, "", time.Now(), jose.HS256, defaultSecret)
+	token := getTestToken([]string{"required"}, "", time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 	err := validConfiguration(configuration, token)
 
 	if err == nil {
@@ -95,7 +87,7 @@ func TestClaims(t *testing.T) {
 
 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
 	validator := NewValidator(configuration)
-	token := getTestToken(defaultAudience, defaultIssuer, time.Now(), jose.HS256, defaultSecret)
+	token := getTestToken(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 
 	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
 	headerValue := fmt.Sprintf("Bearer %s", token)

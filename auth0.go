@@ -2,6 +2,7 @@ package auth0
 
 import (
 	"net/http"
+	"time"
 
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -82,7 +83,8 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 		return nil, err
 	}
 
-	err = claims.Validate(v.config.expectedClaims)
+	expected := v.config.expectedClaims.WithTime(time.Now())
+	err = claims.Validate(expected)
 	return token, err
 }
 

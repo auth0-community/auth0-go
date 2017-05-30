@@ -26,8 +26,6 @@ audience := os.Getenv("AUTH0_CLIENT_ID")
 configuration := auth0.NewConfiguration(secretProvider, []string{audience}, "https://mydomain.eu.auth0.com/", jose.HS256)
 validator := auth0.NewValidator(configuration)
 
-
-
 token, err := validator.ValidateRequest(r)
 
 if err != nil {

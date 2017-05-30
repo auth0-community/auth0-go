@@ -15,7 +15,7 @@ var (
 	defaultSecretProvider = NewKeyProvider(defaultSecret)
 )
 
-func getTestToken(audience []string, issuer string, issuedAt time.Time, alg jose.SignatureAlgorithm, key []byte) string {
+func getTestToken(audience []string, issuer string, expTime time.Time, alg jose.SignatureAlgorithm, key []byte) string {
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: alg, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
 	if err != nil {
 		panic(err)
@@ -24,7 +24,8 @@ func getTestToken(audience []string, issuer string, issuedAt time.Time, alg jose
 	cl := jwt.Claims{
 		Issuer:   issuer,
 		Audience: audience,
-		IssuedAt: jwt.NewNumericDate(issuedAt),
+		IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
+		Expiry:   jwt.NewNumericDate(expTime),
 	}
 
 	raw, err := jwt.Signed(signer).Claims(cl).CompactSerialize()
