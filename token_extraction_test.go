@@ -5,14 +5,18 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
+
+	"gopkg.in/square/go-jose.v2"
 
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 func TestFromRequestExtraction(t *testing.T) {
-
+	referenceToken := getTestToken(defaultAudience, defaultIssuer, time.Now(), jose.HS256, defaultSecret)
 	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
-	headerValue := fmt.Sprintf("Bearer %s", defaultToken)
+
+	headerValue := fmt.Sprintf("Bearer %s", referenceToken)
 	headerTokenRequest.Header.Add("Authorization", headerValue)
 
 	token, err := FromHeader(headerTokenRequest)

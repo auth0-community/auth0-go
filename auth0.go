@@ -2,7 +2,6 @@ package auth0
 
 import (
 	"net/http"
-	"time"
 
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -37,8 +36,6 @@ type Configuration struct {
 	secretProvider SecretProvider
 	expectedClaims jwt.Expected
 	signIn         jose.SignatureAlgorithm
-	exp            time.Duration // EXPLeeway
-	nbf            time.Duration // NBFLeeway
 }
 
 // NewConfiguration creates a configuration for server
@@ -47,8 +44,6 @@ func NewConfiguration(provider SecretProvider, audience []string, issuer string,
 		secretProvider: provider,
 		expectedClaims: jwt.Expected{Issuer: issuer, Audience: audience},
 		signIn:         method,
-		exp:            0,
-		nbf:            0,
 	}
 }
 
