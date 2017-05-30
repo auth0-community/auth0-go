@@ -119,30 +119,11 @@ func TestClaims(t *testing.T) {
 	}
 }
 
-// func TestTokenTimeValidity(t *testing.T) {
-// 	// Create one expired token
-// 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte("secret")}, (&jose.SignerOptions{}).WithType("JWT"))
-// 	if err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
-
-// 	cl := jwt.Claims{
-// 		Issuer:   defaultIssuer,
-// 		Audience: defaultAudience,
-// 		IssuedAt: jwt.NewNumericDate(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)),
-// 	}
-
-// 	raw, err := jwt.Signed(signer).Claims(cl).CompactSerialize()
-// 	if err != nil {
-// 		t.Error(err)
-// 		t.FailNow()
-// 	}
-
-// 	expiredToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiYXVkaWVuY2UiXSwiaWF0IjotMjIwODk4ODgwMCwiaXNzIjoiaXNzdWVyIn0.JuYsg-soHbFiWE-m_1mxPWA4ukKvv3r1AcpsQ1Yy-Mg"
-// 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
-// 	err = validConfiguration(configuration, expiredToken)
-// 	if err == nil {
-// 		t.Errorf("Message should be considered as outdated")
-// 	}
-// }
+func TestTokenTimeValidity(t *testing.T) {
+	expiredToken := getTestToken(defaultAudience, defaultIssuer, time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC), jose.HS256, defaultSecret)
+	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
+	err := validConfiguration(configuration, expiredToken)
+	if err == nil {
+		t.Errorf("Message should be considered as outdated")
+	}
+}
