@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -112,5 +113,32 @@ func TestClaims(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Claims should be valid in case of valid configuration: %q \n", err)
+	}
+}
+
+func TestTokenTimeValidity(t *testing.T) {
+	// Create one expired token
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte("secret")}, (&jose.SignerOptions{}).WithType("JWT"))
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	cl := jwt.Claims{
+		Issuer:   defaultIssuer,
+		Audience: defaultAudience,
+		IssuedAt: jwt.NewNumericDate(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+	}
+
+	raw, err := jwt.Signed(signer).Claims(cl).CompactSerialize()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
+	err = validConfiguration(configuration, raw)
+	if err == nil {
+		t.Errorf("Message should be considered as outdated")
 	}
 }
