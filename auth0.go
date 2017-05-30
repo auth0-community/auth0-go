@@ -45,7 +45,7 @@ type Configuration struct {
 func NewConfiguration(provider SecretProvider, audience []string, issuer string, method jose.SignatureAlgorithm) Configuration {
 	return Configuration{
 		secretProvider: provider,
-		expectedClaims: jwt.Expected{Issuer: issuer, Audience: audience},
+		expectedClaims: jwt.Expected{Issuer: issuer, Audience: audience, Time: time.Now()},
 		signIn:         method,
 		exp:            0,
 		nbf:            0,
