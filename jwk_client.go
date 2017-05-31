@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	DefaultOptions        = JWKClientOptions{""}
 	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
 	ErrNoKeyFound         = errors.New("No Keys has been found")
 	ErrInvalidTokenHeader = errors.New("No valid header found")
