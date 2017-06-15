@@ -37,3 +37,12 @@ func TestFromRequestExtraction(t *testing.T) {
 		t.Error("Invalid issuer, audience or subject:", claims.Issuer, claims.Audience)
 	}
 }
+
+func TestInvalidExtract(t *testing.T) {
+	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
+	_, err := FromHeader(headerTokenRequest)
+
+	if err == nil {
+		t.Error("A request without valid Authorization header should return an error.")
+	}
+}
