@@ -14,7 +14,7 @@ var (
 	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
 	ErrNoKeyFound         = errors.New("No Keys has been found")
 	ErrInvalidTokenHeader = errors.New("No valid header found")
-	ErrInvalidAlgorithm   = errors.New("Only RS252 is supported")
+	ErrInvalidAlgorithm   = errors.New("Only RS256 is supported")
 )
 
 type JWKClientOptions struct {
