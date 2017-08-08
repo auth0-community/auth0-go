@@ -15,7 +15,7 @@ var (
 	defaultSecretProvider = NewKeyProvider(defaultSecret)
 )
 
-func getTestToken(audience []string, issuer string, expTime time.Time, alg jose.SignatureAlgorithm, key []byte) string {
+func getTestToken(audience []string, issuer string, expTime time.Time, alg jose.SignatureAlgorithm, key interface{}) string {
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: alg, Key: key}, (&jose.SignerOptions{}).WithType("JWT"))
 	if err != nil {
 		panic(err)
