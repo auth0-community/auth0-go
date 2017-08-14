@@ -107,31 +107,31 @@ func shouldAccess(wantedGroups []string, groups []interface{}) bool {
 func Auth0Groups(wantedGroups ...string) gin.HandlerFunc {
 
 	return gin.HandlerFunc(func(c *gin.Context) {
-		token, err := validator.ValidateRequest(c.Request)
 
+		tok, err := validator.ValidateRequest(c.Request)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()
-			log.Println("InvalidToken:", token)
+			log.Println("Invalid token:", err)
 			return
 		}
-        
-        claims := map[string]interface{}{}
-        err = validator.Claims(c.Request, tok, &claims)
-        
-        if err != nil {
-        			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
-        			c.Abort()
-        			return
-        		}
-        		
-		metadata, okMetadata := jwt.Claims().Get("app_metadata").(map[string]interface{})
+
+		claims := map[string]interface{}{}
+		err = validator.Claims(c.Request, tok, &claims)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
+			c.Abort()
+			log.Println("Invalid claims:", err)
+			return
+		}
+
+		metadata, okMetadata := claims["app_metadata"].(map[string]interface{})
 		authorization, okAuthorization := metadata["authorization"].(map[string]interface{})
 		groups, hasGroups := authorization["groups"].([]interface{})
-
 		if !okMetadata || !okAuthorization || !hasGroups || !shouldAccess(wantedGroups, groups) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "need more privileges"})
 			c.Abort()
+			log.Println("Need more provileges")
 			return
 		}
 		c.Next()
@@ -141,3 +141,5 @@ func Auth0Groups(wantedGroups ...string) gin.HandlerFunc {
 // Use it
 r.PUT("/news", auth.Auth0Groups(auth.AdminGroup), api.GetNews)
 ```
+
+For a sample usage, take a look inside the `example` directory.
