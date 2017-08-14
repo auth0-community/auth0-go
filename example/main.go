@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/auth0-community/go-auth0"
-	cors "gopkg.in/gin-contrib/cors.v1"
-	"gopkg.in/gin-gonic/gin.v1"
+	cors "github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"gopkg.in/square/go-jose.v2"
 
 	"crypto/x509"
