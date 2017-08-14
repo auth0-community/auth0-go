@@ -107,12 +107,12 @@ func shouldAccess(wantedGroups []string, groups []interface{}) bool {
 func Auth0Groups(wantedGroups ...string) gin.HandlerFunc {
 
 	return gin.HandlerFunc(func(c *gin.Context) {
-		jwt, err := validator.ValidateRequest(c.Request)
+		token, err := validator.ValidateRequest(c.Request)
 
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()
-			log.Println("InvalidToken:", jwt)
+			log.Println("InvalidToken:", token)
 			return
 		}
         

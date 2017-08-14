@@ -103,10 +103,10 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 }
 
 // Claims unmarshall the claims of the provided token
-func (v *JWTValidator) Claims(req *http.Request, token *jwt.JSONWebToken, values interface{}) error {
+func (v *JWTValidator) Claims(req *http.Request, token *jwt.JSONWebToken, values ...interface{}) error {
 	key, err := v.config.secretProvider.GetSecret(req)
 	if err != nil {
 		return err
 	}
-	return token.Claims(key, values)
+	return token.Claims(key, values...)
 }
