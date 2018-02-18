@@ -18,7 +18,8 @@ var (
 )
 
 type JWKClientOptions struct {
-	URI string
+	URI        string
+	HTTPClient *http.Client
 }
 
 type JWKS struct {
@@ -67,7 +68,7 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
-	resp, err := http.Get(j.options.URI)
+	resp, err := j.options.HTTPClient.Get(j.options.URI)
 
 	if err != nil {
 		return []jose.JSONWebKey{}, err
