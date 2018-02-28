@@ -62,8 +62,11 @@ type JWTValidator struct {
 
 // NewValidator creates a new
 // validator with the provided configuration.
-func NewValidator(config Configuration) *JWTValidator {
-	return &JWTValidator{config, RequestTokenExtractorFunc(FromHeader)}
+func NewValidator(config Configuration, extractor RequestTokenExtractor) *JWTValidator {
+	if extractor == nil {
+		extractor = RequestTokenExtractorFunc(FromHeader)
+	}
+	return &JWTValidator{config, extractor}
 }
 
 // ValidateRequest validates the token within
