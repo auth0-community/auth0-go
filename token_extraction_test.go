@@ -59,6 +59,35 @@ func TestFromRequestParamsExtraction(t *testing.T) {
 	}
 }
 
+func TestFromMultipleExtraction(t *testing.T) {
+	extractor := FromMultiple(RequestTokenExtractorFunc(FromHeader), RequestTokenExtractorFunc(FromParams))
+
+	referenceToken := getTestToken(defaultAudience, defaultIssuer, time.Now(), jose.HS256, defaultSecret)
+	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
+	headerValue := fmt.Sprintf("Bearer %s", referenceToken)
+	headerTokenRequest.Header.Add("Authorization", headerValue)
+	paramTokenRequest, _ := http.NewRequest("", "http://localhost?token="+referenceToken, nil)
+
+	for _, r := range []*http.Request{headerTokenRequest, paramTokenRequest} {
+		token, err := extractor.Extract(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		claims := jwt.Claims{}
+		err = token.Claims([]byte("secret"), &claims)
+		if err != nil {
+			t.Errorf("Claims should be decoded correctly with default token: %q \n", err)
+			t.FailNow()
+		}
+
+		if claims.Issuer != defaultIssuer || !reflect.DeepEqual(claims.Audience, jwt.Audience(defaultAudience)) {
+			t.Error("Invalid issuer, audience or subject:", claims.Issuer, claims.Audience)
+		}
+	}
+}
+
 func TestInvalidExtract(t *testing.T) {
 	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
 	_, err := FromHeader(headerTokenRequest)

@@ -27,11 +27,23 @@ func (f RequestTokenExtractorFunc) Extract(r *http.Request) (*jwt.JSONWebToken, 
 	return f(r)
 }
 
+// FromMultiple combines multiple extractors by chaining.
+func FromMultiple(extractors ...RequestTokenExtractor) RequestTokenExtractor {
+	return RequestTokenExtractorFunc(func(r *http.Request) (*jwt.JSONWebToken, error) {
+		for _, e := range extractors {
+			if token, err := e.Extract(r); err == nil {
+				return token, nil
+			}
+		}
+		return nil, ErrTokenNotFound
+	})
+}
+
 // FromHeader looks for the request in the
 // authentication header or call ParseMultipartForm
 // if not present.
+// TODO: Implement parsing form data.
 func FromHeader(r *http.Request) (*jwt.JSONWebToken, error) {
-
 	raw, err := fromHeader(r)
 	if err != nil {
 		return nil, err
