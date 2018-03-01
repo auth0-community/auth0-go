@@ -31,9 +31,13 @@ func (f RequestTokenExtractorFunc) Extract(r *http.Request) (*jwt.JSONWebToken, 
 func FromMultiple(extractors ...RequestTokenExtractor) RequestTokenExtractor {
 	return RequestTokenExtractorFunc(func(r *http.Request) (*jwt.JSONWebToken, error) {
 		for _, e := range extractors {
-			if token, err := e.Extract(r); err == nil {
-				return token, nil
+			token, err := e.Extract(r)
+			if err == ErrTokenNotFound {
+				continue
+			} else if err != nil {
+				return nil, err
 			}
+			return token, nil
 		}
 		return nil, ErrTokenNotFound
 	})
