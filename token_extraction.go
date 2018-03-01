@@ -9,6 +9,8 @@ import (
 )
 
 var (
+	// ErrTokenNotFound is returned by the ValidateRequest if the token was not
+	// found in the request.
 	ErrTokenNotFound = errors.New("Token not found")
 )
 
