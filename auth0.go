@@ -12,26 +12,27 @@ import (
 // SecretProvider will provide everything
 // needed retrieve the secret.
 type SecretProvider interface {
-	GetSecret(req *http.Request) (interface{}, error)
+	GetSecret(r *http.Request) (interface{}, error)
 }
 
 // SecretProviderFunc simple wrappers to provide
 // secret with functions.
-type SecretProviderFunc func(req *http.Request) (interface{}, error)
+type SecretProviderFunc func(*http.Request) (interface{}, error)
 
 // GetSecret implements the SecretProvider interface.
-func (f SecretProviderFunc) GetSecret(req *http.Request) (interface{}, error) {
-	return f(req)
+func (f SecretProviderFunc) GetSecret(r *http.Request) (interface{}, error) {
+	return f(r)
 }
 
 // NewKeyProvider provide a simple passphrase key provider.
 func NewKeyProvider(key interface{}) SecretProvider {
-	return SecretProviderFunc(func(req *http.Request) (interface{}, error) {
+	return SecretProviderFunc(func(_ *http.Request) (interface{}, error) {
 		return key, nil
 	})
 }
 
 var (
+	// ErrNoJWTHeaders is returned when there are no headers in the JWT.
 	ErrNoJWTHeaders = errors.New("No headers in the token")
 )
 
@@ -72,9 +73,7 @@ func NewValidator(config Configuration, extractor RequestTokenExtractor) *JWTVal
 // ValidateRequest validates the token within
 // the http request.
 func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, error) {
-
 	token, err := v.extractor.Extract(r)
-
 	if err != nil {
 		return nil, err
 	}
@@ -94,9 +93,7 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 		return nil, err
 	}
 
-	err = token.Claims(key, &claims)
-
-	if err != nil {
+	if err = token.Claims(key, &claims); err != nil {
 		return nil, err
 	}
 
@@ -106,8 +103,8 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 }
 
 // Claims unmarshall the claims of the provided token
-func (v *JWTValidator) Claims(req *http.Request, token *jwt.JSONWebToken, values ...interface{}) error {
-	key, err := v.config.secretProvider.GetSecret(req)
+func (v *JWTValidator) Claims(r *http.Request, token *jwt.JSONWebToken, values ...interface{}) error {
+	key, err := v.config.secretProvider.GetSecret(r)
 	if err != nil {
 		return err
 	}

@@ -44,7 +44,7 @@ func TestJWKDownloadKeySuccess(t *testing.T) {
 		fmt.Fprintln(w, string(value))
 	}))
 	opts := JWKClientOptions{URI: ts.URL}
-	client := NewJWKClient(opts)
+	client := NewJWKClient(opts, nil)
 
 	keys, err := client.downloadKeys()
 	if err != nil || len(keys) < 1 {
@@ -71,7 +71,7 @@ func TestJWKDownloadKeyInvalid(t *testing.T) {
 	}))
 
 	opts := JWKClientOptions{URI: ts.URL}
-	client := NewJWKClient(opts)
+	client := NewJWKClient(opts, nil)
 
 	_, err := client.downloadKeys()
 	if err != ErrInvalidContentType {
@@ -85,7 +85,7 @@ func TestJWKDownloadKeyInvalid(t *testing.T) {
 	}))
 
 	opts = JWKClientOptions{URI: ts.URL}
-	client = NewJWKClient(opts)
+	client = NewJWKClient(opts, nil)
 
 	_, err = client.downloadKeys()
 	if err == nil {
