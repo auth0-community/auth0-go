@@ -13,7 +13,6 @@ import (
 var (
 	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
 	ErrNoKeyFound         = errors.New("No Keys has been found")
-	ErrInvalidTokenHeader = errors.New("No valid header found")
 	ErrInvalidAlgorithm   = errors.New("Only RS256 is supported")
 )
 
@@ -26,15 +25,23 @@ type JWKS struct {
 }
 
 type JWKClient struct {
-	keys    map[string]jose.JSONWebKey
-	mu      sync.Mutex
-	options JWKClientOptions
+	keys      map[string]jose.JSONWebKey
+	mu        sync.Mutex
+	options   JWKClientOptions
+	extractor RequestTokenExtractor
 }
 
 // NewJWKClient creates a new JWKClient instance from the
 // provided options.
-func NewJWKClient(options JWKClientOptions) *JWKClient {
-	return &JWKClient{keys: map[string]jose.JSONWebKey{}, options: options}
+func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient {
+	if extractor == nil {
+		extractor = RequestTokenExtractorFunc(FromHeader)
+	}
+	return &JWKClient{
+		keys:      map[string]jose.JSONWebKey{},
+		options:   options,
+		extractor: extractor,
+	}
 }
 
 // GetKey returns the key associated with the provided ID.
@@ -92,18 +99,18 @@ func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
 	return jwks.Keys, nil
 }
 
-func (j *JWKClient) GetSecret(req *http.Request) (interface{}, error) {
-	t, err := FromHeader(req)
-
+// GetSecret implements the GetSecret method of the SecretProvider interface.
+func (j *JWKClient) GetSecret(r *http.Request) (interface{}, error) {
+	token, err := j.extractor.Extract(r)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(t.Headers) < 1 {
-		return nil, ErrInvalidTokenHeader
+	if len(token.Headers) < 1 {
+		return nil, ErrNoJWTHeaders
 	}
 
-	header := t.Headers[0]
+	header := token.Headers[0]
 	if header.Algorithm != "RS256" {
 		return nil, ErrInvalidAlgorithm
 	}

@@ -67,10 +67,15 @@ func TestFromMultipleExtraction(t *testing.T) {
 	headerValue := fmt.Sprintf("Bearer %s", referenceToken)
 	headerTokenRequest.Header.Add("Authorization", headerValue)
 	paramTokenRequest, _ := http.NewRequest("", "http://localhost?token="+referenceToken, nil)
+	brokenParamTokenRequest, _ := http.NewRequest("", "http://localhost?token=broken", nil)
 
-	for _, r := range []*http.Request{headerTokenRequest, paramTokenRequest} {
+	for _, r := range []*http.Request{headerTokenRequest, paramTokenRequest, brokenParamTokenRequest} {
 		token, err := extractor.Extract(r)
 		if err != nil {
+			if r == brokenParamTokenRequest && err.Error() == "square/go-jose: compact JWS format must have three parts" {
+				// Checking that the JWT error is returned.
+				continue
+			}
 			t.Error(err)
 			return
 		}
