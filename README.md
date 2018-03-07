@@ -80,7 +80,7 @@ if err != nil {
 ## API with JWK
 
 ```go
-client := NewJWKClient(JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"})
+client := NewJWKClient(JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"}, nil)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 configuration := NewConfiguration(client, []string{audience}, "https://mydomain.eu.auth0.com/", jose.RS256)
 validator := NewValidator(configuration, nil)
