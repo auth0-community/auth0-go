@@ -8,14 +8,16 @@
 
 auth0 is a package helping to authenticate using the [Auth0](https://auth0.com) service.
 
-## Installation 
+## Installation
 
 ```
 go get github.com/auth0-community/go-auth0
 ```
 
 ## Client Credentials - HS256
+
 Using HS256, the validation key is the secret you retrieve in the dashboard.
+
 ```go
 // Creates a configuration with the Auth0 information
 secret, _ := base64.URLEncoding.DecodeString(os.Getenv("AUTH0_CLIENT_SECRET"))
@@ -23,7 +25,7 @@ secretProvider := auth0.NewKeyProvider(secret)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 
 configuration := auth0.NewConfiguration(secretProvider, []string{audience}, "https://mydomain.eu.auth0.com/", jose.HS256)
-validator := auth0.NewValidator(configuration)
+validator := auth0.NewValidator(configuration, nil)
 
 token, err := validator.ValidateRequest(r)
 
@@ -33,6 +35,7 @@ if err != nil {
 ```
 
 ## Client Credentials - RS256
+
 Using RS256, the validation key is the certificate you find in advanced settings
 
 ```go
@@ -65,7 +68,7 @@ secretProvider := auth0.NewKeyProvider(secret)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 
 configuration := auth0.NewConfiguration(secretProvider, []string{audience}, "https://mydomain.eu.auth0.com/", jose.RS256)
-validator := auth0.NewValidator(configuration)
+validator := auth0.NewValidator(configuration, nil)
 
 token, err := validator.ValidateRequest(r)
 
@@ -73,14 +76,14 @@ if err != nil {
     fmt.Println("Token is not valid:", token)
 }
 ```
+
 ## API with JWK
 
 ```go
-   
 client := NewJWKClient(JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"})
 audience := os.Getenv("AUTH0_CLIENT_ID")
 configuration := NewConfiguration(client, []string{audience}, "https://mydomain.eu.auth0.com/", jose.RS256)
-validator := NewValidator(configuration)
+validator := NewValidator(configuration, nil)
 
 token, err := validator.ValidateRequest(r)
 
@@ -88,18 +91,19 @@ if err != nil {
     fmt.Println("Token is not valid:", token)
 }
 ```
+
 ## Example
 
 ### Gin
 
-Using [Gin](https://github.com/gin-gonic/gin) and the [Auth0 Authorization Extension](https://auth0.com/docs/extensions/authorization-extension), you 
+Using [Gin](https://github.com/gin-gonic/gin) and the [Auth0 Authorization Extension](https://auth0.com/docs/extensions/authorization-extension), you
 may want to implement the authentication auth like the following:
 
 ```go
 var auth.AdminGroup string = "my_admin_group"
 
 // Access Control Helper function.
-func shouldAccess(wantedGroups []string, groups []interface{}) bool { 
+func shouldAccess(wantedGroups []string, groups []interface{}) bool {
  /* Fill depending on your needs */
 }
 

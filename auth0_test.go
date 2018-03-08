@@ -12,7 +12,7 @@ import (
 )
 
 func validConfiguration(configuration Configuration, tokenRaw string) error {
-	validator := NewValidator(configuration)
+	validator := NewValidator(configuration, nil)
 	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)
 	headerValue := fmt.Sprintf("Bearer %s", tokenRaw)
 	headerTokenRequest.Header.Add("Authorization", headerValue)
@@ -86,7 +86,7 @@ func TestInvalidProvider(t *testing.T) {
 func TestClaims(t *testing.T) {
 
 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
-	validator := NewValidator(configuration)
+	validator := NewValidator(configuration, nil)
 	token := getTestToken(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 
 	headerTokenRequest, _ := http.NewRequest("", "http://localhost", nil)

@@ -86,7 +86,7 @@ func init() {
 	}
 	secretProvider := auth0.NewKeyProvider(secret)
 	configuration := auth0.NewConfiguration(secretProvider, []string{"AUDIENCE"}, "ISSUER", jose.RS256)
-	validator = auth0.NewValidator(configuration)
+	validator = auth0.NewValidator(configuration, nil)
 }
 
 func Auth0Groups(wantedGroups ...string) gin.HandlerFunc {

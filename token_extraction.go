@@ -1,17 +1,19 @@
 package auth0
 
 import (
-
-	"net/http"
-	"gopkg.in/square/go-jose.v2/jwt"
-	"strings"
 	"errors"
+	"net/http"
+	"strings"
 
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 var (
+	// ErrTokenNotFound is returned by the ValidateRequest if the token was not
+	// found in the request.
 	ErrTokenNotFound = errors.New("Token not found")
 )
+
 // RequestTokenExtractor can extract a JWT
 // from a request.
 type RequestTokenExtractor interface {
@@ -27,21 +29,42 @@ func (f RequestTokenExtractorFunc) Extract(r *http.Request) (*jwt.JSONWebToken, 
 	return f(r)
 }
 
+// FromMultiple combines multiple extractors by chaining.
+func FromMultiple(extractors ...RequestTokenExtractor) RequestTokenExtractor {
+	return RequestTokenExtractorFunc(func(r *http.Request) (*jwt.JSONWebToken, error) {
+		for _, e := range extractors {
+			token, err := e.Extract(r)
+			if err == ErrTokenNotFound {
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			return token, nil
+		}
+		return nil, ErrTokenNotFound
+	})
+}
+
 // FromHeader looks for the request in the
 // authentication header or call ParseMultipartForm
 // if not present.
+// TODO: Implement parsing form data.
 func FromHeader(r *http.Request) (*jwt.JSONWebToken, error) {
-
-	raw, err := fromHeader(r)
-	if err != nil {
-		return nil, err
+	raw := ""
+	if h := r.Header.Get("Authorization"); len(h) > 7 && strings.EqualFold(h[0:7], "BEARER ") {
+		raw = h[7:]
 	}
-	return jwt.ParseSigned(string(raw))
+	if raw == "" {
+		return nil, ErrTokenNotFound
+	}
+	return jwt.ParseSigned(raw)
 }
 
-func fromHeader(r *http.Request) ([]byte, error) {
-	if authorizationHeader := r.Header.Get("Authorization"); len(authorizationHeader) > 7 && strings.EqualFold(authorizationHeader[0:7], "BEARER ") {
-		return []byte(authorizationHeader[7:]), nil
+// FromParams returns the JWT when passed as the URL query param "token".
+func FromParams(r *http.Request) (*jwt.JSONWebToken, error) {
+	raw := r.URL.Query().Get("token")
+	if raw == "" {
+		return nil, ErrTokenNotFound
 	}
-	return nil, ErrTokenNotFound
+	return jwt.ParseSigned(raw)
 }
