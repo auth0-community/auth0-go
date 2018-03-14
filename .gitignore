@@ -5,3 +5,4 @@ gin-bin
 *.coverprofile
 .idea/
 *.iml
+vendor/

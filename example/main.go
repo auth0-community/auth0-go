@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/auth0-community/go-auth0"
+	"github.com/shiranr/go-auth0.git"
 	cors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/square/go-jose.v2"

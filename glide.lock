@@ -1,0 +1,46 @@
+hash: 8d9144b1a15ccf823d3a90ef6d58ffefd9ebc82913eaf300e144c51d33444a94
+updated: 2018-03-14T16:39:39.924052198+02:00
+imports:
+- name: github.com/gin-contrib/cors
+  version: cf4846e6a636a76237a28d9286f163c132e841bc
+- name: github.com/gin-contrib/sse
+  version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
+- name: github.com/gin-gonic/gin
+  version: d459835d2b077e44f7c9b453505ee29881d5d12d
+  subpackages:
+  - binding
+  - render
+- name: github.com/go-errors/errors
+  version: 3afebba5a48dbc89b574d890b6b34d9ee10b4785
+- name: github.com/golang/protobuf
+  version: bbd03ef6da3a115852eaf24c8a1c46aeb39aa175
+  subpackages:
+  - proto
+- name: github.com/mattn/go-isatty
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+- name: github.com/shiranr/go-auth0.git
+  version: 98eeb96f766b18eff33bf303a701ee929209ce80
+- name: github.com/ugorji/go
+  version: 02537d3a3e32ef636a53519265d211bd208ca488
+  subpackages:
+  - codec
+- name: golang.org/x/crypto
+  version: 85f98707c97e11569271e4d9b3d397e079c4f4d0
+  subpackages:
+  - ed25519
+  - ed25519/internal/edwards25519
+- name: golang.org/x/sys
+  version: dd2ff4accc098aceecb86b36eaa7829b2a17b1c9
+  subpackages:
+  - unix
+- name: gopkg.in/go-playground/validator.v8
+  version: 5f1438d3fca68893a817e4a66806cea46a9e4ebf
+- name: gopkg.in/square/go-jose.v2
+  version: 6ee92191fea850cdcab9a18867abf5f521cdbadb
+  subpackages:
+  - cipher
+  - json
+  - jwt
+- name: gopkg.in/yaml.v2
+  version: 7f97868eec74b32b0982dd158a51a446d1da7eb5
+testImports: []

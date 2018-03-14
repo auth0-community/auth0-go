@@ -1,0 +1,14 @@
+package: github.com/shiranr/go-auth0
+import:
+- package: github.com/gin-contrib/cors
+  version: v1.2
+- package: github.com/gin-gonic/gin
+  version: v1.2
+- package: github.com/go-errors/errors
+  version: v1.0.0
+- package: github.com/shiranr/go-auth0.git
+  version: v0.0.2
+- package: gopkg.in/square/go-jose.v2
+  version: v2.1.4
+  subpackages:
+  - jwt
