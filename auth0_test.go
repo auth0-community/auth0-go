@@ -111,6 +111,16 @@ func TestClaims(t *testing.T) {
 	}
 }
 
+func TestTokenAlgValidity(t *testing.T) {
+	token := getTestToken([]string{"required"}, "", time.Now().Add(24*time.Hour), jose.HS384, defaultSecret)
+	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
+	err := validConfiguration(configuration, token)
+
+	if err == nil {
+		t.Error("Should failed if the token was not of a valid type")
+	}
+}
+
 func TestTokenTimeValidity(t *testing.T) {
 	expiredToken := getTestToken(defaultAudience, defaultIssuer, time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC), jose.HS256, defaultSecret)
 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)

@@ -13,7 +13,7 @@ import (
 var (
 	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
 	ErrNoKeyFound         = errors.New("No Keys has been found")
-	ErrInvalidAlgorithm   = errors.New("Only RS256 is supported")
+	ErrInvalidAlgorithm   = errors.New("Algorithm is invalid")
 )
 
 type JWKClientOptions struct {
@@ -111,9 +111,6 @@ func (j *JWKClient) GetSecret(r *http.Request) (interface{}, error) {
 	}
 
 	header := token.Headers[0]
-	if header.Algorithm != "RS256" {
-		return nil, ErrInvalidAlgorithm
-	}
 
 	return j.GetKey(header.KeyID)
 }
