@@ -23,9 +23,20 @@ func validConfiguration(configuration Configuration, tokenRaw string) error {
 
 func TestValidatorFull(t *testing.T) {
 
+	// HS256
 	token := getTestToken(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.HS256, defaultSecret)
 	configuration := NewConfiguration(defaultSecretProvider, defaultAudience, defaultIssuer, jose.HS256)
 	err := validConfiguration(configuration, token)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// ES384
+	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "")
+	tokenES384 := getTestToken(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, jsonWebKeyES384)
+	configurationES384 := NewConfiguration(NewKeyProvider(jsonWebKeyES384.Public()), defaultAudience, defaultIssuer, jose.ES384)
+	err = validConfiguration(configurationES384, tokenES384)
 
 	if err != nil {
 		t.Error(err)
