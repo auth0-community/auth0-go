@@ -12,11 +12,21 @@ import (
 )
 
 var (
+	emptyAudience = []string{}
+	emptyIssuer   = ""
+
+	defaultAudience = []string{"audience"}
+	defaultIssuer   = "issuer"
+
 	// The default generated token by Chrome jwt extension
 	defaultSecret         = []byte("secret")
-	defaultAudience       = []string{"audience"}
-	defaultIssuer         = "issuer"
 	defaultSecretProvider = NewKeyProvider(defaultSecret)
+
+	defaultSecretRS256         = genRSASSAJWK(jose.RS256, "")
+	defaultSecretProviderRS256 = NewKeyProvider(defaultSecretRS256.Public())
+
+	defaultSecretES384         = genECDSAJWK(jose.ES384, "")
+	defaultSecretProviderES384 = NewKeyProvider(defaultSecretES384.Public())
 )
 
 func genRSASSAJWK(sigAlg jose.SignatureAlgorithm, kid string) jose.JSONWebKey {
