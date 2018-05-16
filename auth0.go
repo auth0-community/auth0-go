@@ -54,6 +54,14 @@ func NewConfiguration(provider SecretProvider, audience []string, issuer string,
 	}
 }
 
+// NewConfigurationTrustProvider creates a configuration for server with no enforcement for token sig alg type, instead trust provider
+func NewConfigurationTrustProvider(provider SecretProvider, audience []string, issuer string) Configuration {
+	return Configuration{
+		secretProvider: provider,
+		expectedClaims: jwt.Expected{Issuer: issuer, Audience: audience},
+	}
+}
+
 // JWTValidator helps middleware
 // to validate token
 type JWTValidator struct {
@@ -82,9 +90,12 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 		return nil, ErrNoJWTHeaders
 	}
 
-	header := token.Headers[0]
-	if header.Algorithm != string(v.config.signIn) {
-		return nil, ErrInvalidAlgorithm
+	// trust secret provider when sig alg not configured and skip check
+	if v.config.signIn != "" {
+		header := token.Headers[0]
+		if header.Algorithm != string(v.config.signIn) {
+			return nil, ErrInvalidAlgorithm
+		}
 	}
 
 	claims := jwt.Claims{}
