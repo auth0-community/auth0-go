@@ -25,7 +25,7 @@ type JWKS struct {
 }
 
 type JWKClient struct {
-	keys      map[string]jose.JSONWebKey
+	keyCacher KeyCacher
 	mu        sync.Mutex
 	options   JWKClientOptions
 	extractor RequestTokenExtractor
@@ -37,8 +37,26 @@ func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JW
 	if extractor == nil {
 		extractor = RequestTokenExtractorFunc(FromHeader)
 	}
+
+	kc := newMemoryPersistentKeyCacher()
+
 	return &JWKClient{
-		keys:      map[string]jose.JSONWebKey{},
+		keyCacher: kc,
+		options:   options,
+		extractor: extractor,
+	}
+}
+
+func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient {
+	if extractor == nil {
+		extractor = RequestTokenExtractorFunc(FromHeader)
+	}
+	if kc == nil {
+		kc = newMemoryPersistentKeyCacher()
+	}
+
+	return &JWKClient{
+		keyCacher: kc,
 		options:   options,
 		extractor: extractor,
 	}
@@ -49,28 +67,20 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	searchedKey, exist := j.keys[ID]
+	searchedKey, exist := j.keyCacher.Get(ID)
+
 	if !exist {
 		if keys, err := j.downloadKeys(); err != nil {
 			return jose.JSONWebKey{}, err
 		} else {
-
-			for _, key := range keys {
-				// Cache key
-				j.keys[key.KeyID] = key
-
-				if key.KeyID == ID {
-					searchedKey = key
-					exist = true
-				}
+			addedKey, success := j.keyCacher.Add(ID, keys)
+			if success {
+				return addedKey, nil
 			}
+			return jose.JSONWebKey{}, ErrNoKeyFound
 		}
 	}
-
-	if exist {
-		return searchedKey, nil
-	}
-	return jose.JSONWebKey{}, ErrNoKeyFound
+	return searchedKey, nil
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
