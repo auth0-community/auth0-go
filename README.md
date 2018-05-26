@@ -41,6 +41,7 @@ Using RS256, the validation key is the certificate you find in advanced settings
 ```go
 // Extracted from https://github.com/square/go-jose/blob/master/utils.go
 // LoadPublicKey loads a public key from PEM/DER-encoded data.
+// You can download the Auth0 pem file from `applications -> your_app -> scroll down -> Advanced Settings -> certificates -> download`
 func LoadPublicKey(data []byte) (interface{}, error) {
 	input := data
 
@@ -63,7 +64,14 @@ func LoadPublicKey(data []byte) (interface{}, error) {
 	return nil, fmt.Errorf("square/go-jose: parse error, got '%s' and '%s'", err0, err1)
 }
 // Create a configuration with the Auth0 information
-secret, _ := LoadPublicKey(sharedKey)
+pem, err := ioutil.ReadFile("path/to/your/cert.pem")
+if err != nil {
+	panic(err)
+}
+secret, err := LoadPublicKey(sharedKey)
+if err != nil {
+	panic(err)
+}
 secretProvider := auth0.NewKeyProvider(secret)
 audience := os.Getenv("AUTH0_CLIENT_ID")
 
