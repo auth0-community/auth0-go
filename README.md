@@ -104,7 +104,7 @@ if err != nil {
 
 ``` func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient```
 
-### Customized key cacher: 
+### Built-in key cacher: 
 
 ```func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient```
 
@@ -114,6 +114,11 @@ There is a bulit-in in-memory key cacher that supports max age and size (capacit
 
 *No caching can be obtained by passing 0 to max age and size in above function*
 
+### Custom key cacher: 
+
+A custom key cacher interface can be passed and used by the client. It just needs to support two main functions: 
+- Get: ```Get(keyID string) (jose.JSONWebKey, error)```
+- Add: ```Add(keyID string, webKeys []jose.JSONWebKey) (jose.JSONWebKey, error)```
 
 ## Example
 
