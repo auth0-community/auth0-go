@@ -28,23 +28,23 @@ func newMockKeyCacher(get bool, add bool, key jose.JSONWebKey, keyID string) *mo
 	}
 }
 
-func (mockKC *mockKeyCacher) Get(keyID string) (jose.JSONWebKey, bool) {
+func (mockKC *mockKeyCacher) Get(keyID string) (jose.JSONWebKey, error) {
 	if mockKC.get {
 		mockKey := jose.JSONWebKey{Use: "test"}
 		mockKey.KeyID = mockKC.keyID
-		return mockKey, true
+		return mockKey, nil
 	}
 
-	return jose.JSONWebKey{}, false
+	return jose.JSONWebKey{}, ErrNoKeyFound
 }
 
-func (mockKC *mockKeyCacher) Add(keyID string, webKeys []jose.JSONWebKey) (jose.JSONWebKey, bool) {
+func (mockKC *mockKeyCacher) Add(keyID string, webKeys []jose.JSONWebKey) (jose.JSONWebKey, error) {
 	if mockKC.add {
 		mockKey := jose.JSONWebKey{Use: "test"}
 		mockKey.KeyID = mockKC.keyID
-		return mockKey, true
+		return mockKey, nil
 	}
-	return jose.JSONWebKey{}, false
+	return jose.JSONWebKey{}, ErrNoKeyFound
 }
 
 func TestJWKDownloadKeySuccess(t *testing.T) {

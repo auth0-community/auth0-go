@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint.")
-	ErrNoKeyFound         = errors.New("No Keys has been found")
+	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint")
 	ErrInvalidAlgorithm   = errors.New("Algorithm is invalid")
 )
 
@@ -67,20 +66,17 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	searchedKey, exist := j.keyCacher.Get(ID)
+	searchedKey, err := j.keyCacher.Get(ID)
 
-	if !exist {
+	if err != nil {
 		if keys, err := j.downloadKeys(); err != nil {
 			return jose.JSONWebKey{}, err
 		} else {
-			addedKey, success := j.keyCacher.Add(ID, keys)
-			if success {
-				return addedKey, nil
-			}
-			return jose.JSONWebKey{}, ErrNoKeyFound
+			addedKey, err := j.keyCacher.Add(ID, keys)
+			return addedKey, err
 		}
 	}
-	return searchedKey, nil
+	return searchedKey, err
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
