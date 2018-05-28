@@ -99,6 +99,21 @@ if err != nil {
     fmt.Println("Token is not valid:", token)
 }
 ```
+## Support key cacher interface
+### Persistent key cacher:
+
+``` func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient```
+
+### Customized key cacher: 
+
+```func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient```
+
+There is a bulit-in in-memory key cacher that supports max age and size (capacity), and it can be initialized through:
+
+```func NewMemoryKeyCacher(maxAge int, size int) KeyCacher```
+
+*No caching can be obtained by passing 0 to max age and size in above function*
+
 
 ## Example
 
