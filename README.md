@@ -110,15 +110,15 @@ if err != nil {
 
 There is a bulit-in in-memory key cacher that supports max age and size (capacity), and it can be initialized through:
 
-```func NewMemoryKeyCacher(maxAge int, size int) KeyCacher```
+```func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher```
 
 *No caching can be obtained by passing 0 to max age and size in above function*
 
 ### Custom key cacher: 
 
 A custom key cacher interface can be passed and used by the client. It just needs to support two main functions: 
-- Get: ```Get(keyID string) (jose.JSONWebKey, error)```
-- Add: ```Add(keyID string, webKeys []jose.JSONWebKey) (jose.JSONWebKey, error)```
+- Get: ```Get(keyID string) (*jose.JSONWebKey, error)```
+- Add: ```Add(keyID string, webKeys []jose.JSONWebKey) (*jose.JSONWebKey, error)```
 
 ## Example
 
