@@ -47,13 +47,10 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
-		if mkc.size == -1 {
+		if mkc.size == -1 || !isExpired(mkc, keyID) {
 			return &searchKey.JSONWebKey, nil
 		}
-		if isExpired(mkc, keyID) {
-			return nil, ErrKeyExpired
-		}
-		return &searchKey.JSONWebKey, nil
+		return nil, ErrKeyExpired
 	}
 	return nil, ErrNoKeyFound
 }
