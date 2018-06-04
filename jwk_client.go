@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrInvalidContentType = errors.New("Should have a JSON content type for JWKS endpoint")
-	ErrInvalidAlgorithm   = errors.New("Algorithm is invalid")
+	ErrInvalidContentType = errors.New("should have a JSON content type for JWKS endpoint")
+	ErrInvalidAlgorithm   = errors.New("algorithm is invalid")
 )
 
 type JWKClientOptions struct {
@@ -37,27 +37,29 @@ func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JW
 		extractor = RequestTokenExtractorFunc(FromHeader)
 	}
 
-	kc := newMemoryPersistentKeyCacher()
+	keyCacher := newMemoryPersistentKeyCacher()
 
 	return &JWKClient{
-		keyCacher: kc,
-		options:   options,
-		extractor: extractor,
+		keyCacher,
+		sync.Mutex{},
+		options,
+		extractor,
 	}
 }
 
-func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient {
+func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, keyCacher KeyCacher) *JWKClient {
 	if extractor == nil {
 		extractor = RequestTokenExtractorFunc(FromHeader)
 	}
-	if kc == nil {
-		kc = newMemoryPersistentKeyCacher()
+	if keyCacher == nil {
+		keyCacher = newMemoryPersistentKeyCacher()
 	}
 
 	return &JWKClient{
-		keyCacher: kc,
-		options:   options,
-		extractor: extractor,
+		keyCacher,
+		sync.Mutex{},
+		options,
+		extractor,
 	}
 }
 
@@ -68,15 +70,18 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 
 	searchedKey, err := j.keyCacher.Get(ID)
 
-	if err != nil {
+	if searchedKey == nil {
 		if keys, err := j.downloadKeys(); err != nil {
 			return jose.JSONWebKey{}, err
 		} else {
 			addedKey, err := j.keyCacher.Add(ID, keys)
-			return addedKey, err
+			if addedKey == nil {
+				return jose.JSONWebKey{}, err
+			}
+			return *addedKey, err
 		}
 	}
-	return searchedKey, err
+	return *searchedKey, err
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {

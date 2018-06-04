@@ -8,18 +8,18 @@ import (
 )
 
 var (
-	ErrNoKeyFound = errors.New("No Keys has been found")
-	ErrKeyExpired = errors.New("Key exists but is expired")
+	ErrNoKeyFound = errors.New("no Keys has been found")
+	ErrKeyExpired = errors.New("key exists but is expired")
 )
 
 type KeyCacher interface {
-	Get(keyID string) (jose.JSONWebKey, error)
-	Add(keyID string, webKeys []jose.JSONWebKey) (jose.JSONWebKey, error)
+	Get(keyID string) (*jose.JSONWebKey, error)
+	Add(keyID string, webKeys []jose.JSONWebKey) (*jose.JSONWebKey, error)
 }
 
 type memoryKeyCacher struct {
 	entries map[string]keyCacherEntry
-	maxAge  int
+	maxAge  time.Duration
 	size    int
 }
 
@@ -28,7 +28,7 @@ type keyCacherEntry struct {
 	jose.JSONWebKey
 }
 
-func NewMemoryKeyCacher(maxAge int, size int) KeyCacher {
+func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
 		maxAge:  maxAge,
@@ -39,44 +39,32 @@ func NewMemoryKeyCacher(maxAge int, size int) KeyCacher {
 func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
-		maxAge:  -1,
+		maxAge:  -1, //time.Time
 		size:    -1,
 	}
 }
 
-func (mkc *memoryKeyCacher) Get(keyID string) (jose.JSONWebKey, error) {
-	if mkc.size == 0 {
-		return jose.JSONWebKey{}, ErrNoKeyFound
-	}
-
-	searchKey, exist := mkc.entries[keyID]
-
-	if exist {
+func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
+	searchKey, ok := mkc.entries[keyID]
+	if ok {
 		if mkc.size == -1 {
-			return searchKey.JSONWebKey, nil
+			return &searchKey.JSONWebKey, nil
 		}
-
-		expiringTime := mkc.entries[keyID].addedAt.Add(time.Second * time.Duration(mkc.maxAge))
-		expired := time.Now().After(expiringTime)
-		if expired {
-			delete(mkc.entries, keyID)
-			return jose.JSONWebKey{}, ErrKeyExpired
+		if isExpired(mkc, keyID) {
+			return nil, ErrKeyExpired
 		}
-		return searchKey.JSONWebKey, nil
+		return &searchKey.JSONWebKey, nil
 	}
-	return searchKey.JSONWebKey, ErrNoKeyFound
+	return nil, ErrNoKeyFound
 }
 
-func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) (jose.JSONWebKey, error) {
-	addingKey, success := jose.JSONWebKey{}, false
+func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) (*jose.JSONWebKey, error) {
+	addingKey := jose.JSONWebKey{}
 
 	for _, key := range downloadedKeys {
-
 		if key.KeyID == keyID {
 			addingKey = key
-			success = true
 		}
-
 		if mkc.size == -1 {
 			mkc.entries[key.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),
@@ -84,31 +72,39 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 			}
 		}
 	}
-	if success {
-		if mkc.size != 0 {
-			mkc.entries[addingKey.KeyID] = keyCacherEntry{
-				addedAt:    time.Now(),
-				JSONWebKey: addingKey,
-			}
-			if mkc.size < len(mkc.entries) {
-				mkc.replaceEntry(addingKey)
-			}
+	if mkc.size != -1 {
+		mkc.entries[addingKey.KeyID] = keyCacherEntry{
+			addedAt:    time.Now(),
+			JSONWebKey: addingKey,
 		}
-		return addingKey, nil
+		handleOverflow(mkc)
+		return &addingKey, nil
 	}
-	return addingKey, ErrNoKeyFound
+	if addingKey.KeyID != "" {
+		return &addingKey, nil
+	}
+	return nil, ErrNoKeyFound
 }
 
-//delete oldest element and store new in
-func (mkc *memoryKeyCacher) replaceEntry(newKey jose.JSONWebKey) {
-	var oldestEntryKeyID string
-	var latestAddedTime = time.Now()
-	for entryKeyID, entry := range mkc.entries {
-		if entry.addedAt.Before(latestAddedTime) {
-			latestAddedTime = entry.addedAt
-			oldestEntryKeyID = entryKeyID
-		}
+func isExpired(mkc *memoryKeyCacher, keyID string) bool {
+	if time.Now().After(mkc.entries[keyID].addedAt.Add(mkc.maxAge)) {
+		delete(mkc.entries, keyID)
+		return true
 	}
-	delete(mkc.entries, oldestEntryKeyID)
-	mkc.entries[newKey.KeyID] = keyCacherEntry{time.Now(), newKey}
+	return false
+}
+
+//delete oldest element if overflowed
+func handleOverflow(mkc *memoryKeyCacher) {
+	if mkc.size < len(mkc.entries) {
+		var oldestEntryKeyID string
+		var latestAddedTime = time.Now()
+		for entryKeyID, entry := range mkc.entries {
+			if entry.addedAt.Before(latestAddedTime) {
+				latestAddedTime = entry.addedAt
+				oldestEntryKeyID = entryKeyID
+			}
+		}
+		delete(mkc.entries, oldestEntryKeyID)
+	}
 }

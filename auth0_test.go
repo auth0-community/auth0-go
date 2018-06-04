@@ -217,7 +217,7 @@ func TestValidateRequestAndClaims(t *testing.T) {
 				jose.HS384,
 				defaultSecret,
 			),
-			expectedErrorMsg: "Algorithm is invalid",
+			expectedErrorMsg: "algorithm is invalid",
 		},
 		{
 			name: "fail - invalid token secret",
