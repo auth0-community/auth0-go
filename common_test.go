@@ -5,6 +5,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	jose "gopkg.in/square/go-jose.v2"
@@ -108,4 +112,31 @@ func getTestTokenWithKid(audience []string, issuer string, expTime time.Time, al
 		panic(err)
 	}
 	return raw
+}
+
+func genNewServer(genJWKS bool) (JWKClientOptions, string, string, error) {
+	// Generate JWKs
+	jsonWebKeyRS256 := genRSASSAJWK(jose.RS256, "keyRS256")
+	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
+
+	// Generate JWKS
+	jwks := JWKS{
+		Keys: []jose.JSONWebKey{},
+	}
+	if genJWKS {
+		jwks = JWKS{
+			Keys: []jose.JSONWebKey{jsonWebKeyRS256.Public(), jsonWebKeyES384.Public()},
+		}
+	}
+	value, err := json.Marshal(&jwks)
+
+	// Generate Tokens
+	tokenRS256 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.RS256, jsonWebKeyRS256, "keyRS256")
+	tokenES384 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, jsonWebKeyES384, "keyES384")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintln(w, string(value))
+	}))
+	return JWKClientOptions{URI: ts.URL}, tokenRS256, tokenES384, err
 }

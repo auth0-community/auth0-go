@@ -1,7 +1,6 @@
 package auth0
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,15 +16,13 @@ import (
 type mockKeyCacher struct {
 	getError error
 	addError error
-	key      jose.JSONWebKey
 	keyID    string
 }
 
-func newMockKeyCacher(getError error, addError error, key jose.JSONWebKey, keyID string) *mockKeyCacher {
+func newMockKeyCacher(getError error, addError error, keyID string) *mockKeyCacher {
 	return &mockKeyCacher{
 		getError,
 		addError,
-		key,
 		keyID,
 	}
 }
@@ -36,7 +33,6 @@ func (mockKC *mockKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 		mockKey.KeyID = mockKC.keyID
 		return &mockKey, nil
 	}
-
 	return nil, ErrNoKeyFound
 }
 
@@ -50,29 +46,11 @@ func (mockKC *mockKeyCacher) Add(keyID string, webKeys []jose.JSONWebKey) (*jose
 }
 
 func TestJWKDownloadKeySuccess(t *testing.T) {
-	// Generate JWKs
-	jsonWebKeyRS256 := genRSASSAJWK(jose.RS256, "keyRS256")
-	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
-
-	// Generate JWKS
-	jwks := JWKS{
-		Keys: []jose.JSONWebKey{jsonWebKeyRS256.Public(), jsonWebKeyES384.Public()},
-	}
-	value, err := json.Marshal(&jwks)
+	opts, tokenRS256, tokenES384, err := genNewServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-
-	// Generate Tokens
-	tokenRS256 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.RS256, jsonWebKeyRS256, "keyRS256")
-	tokenES384 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, jsonWebKeyES384, "keyES384")
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, string(value))
-	}))
-	opts := JWKClientOptions{URI: ts.URL}
 	client := NewJWKClient(opts, nil)
 
 	keys, err := client.downloadKeys()
@@ -94,27 +72,7 @@ func TestJWKDownloadKeySuccess(t *testing.T) {
 }
 
 func TestJWKDownloadKeyNoKeys(t *testing.T) {
-	// Generate JWKs
-	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
-
-	// Generate JWKS
-	jwks := JWKS{
-		Keys: []jose.JSONWebKey{},
-	}
-	value, err := json.Marshal(&jwks)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	// Generate Tokens
-	tokenES384 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, jsonWebKeyES384, "keyES384")
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, string(value))
-	}))
-	opts := JWKClientOptions{URI: ts.URL}
+	opts, _, tokenES384, err := genNewServer(false)
 	client := NewJWKClient(opts, nil)
 
 	req, _ := http.NewRequest("", "http://localhost", nil)
@@ -127,32 +85,17 @@ func TestJWKDownloadKeyNoKeys(t *testing.T) {
 }
 
 func TestJWKDownloadKeyNotFound(t *testing.T) {
-	// Generate JWKs
-	jsonWebKeyRS256 := genRSASSAJWK(jose.RS256, "keyRS256")
-	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
-
-	// Generate JWKS
-	jwks := JWKS{
-		Keys: []jose.JSONWebKey{jsonWebKeyRS256.Public()},
-	}
-	value, err := json.Marshal(&jwks)
+	opts, _, _, err := genNewServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-
-	// Generate Tokens
-	tokenES384 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, jsonWebKeyES384, "keyES384")
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, string(value))
-	}))
-	opts := JWKClientOptions{URI: ts.URL}
 	client := NewJWKClient(opts, nil)
 
+	tokenES385 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, genECDSAJWK(jose.ES384, "keyES385"), "keyES385")
+
 	req, _ := http.NewRequest("", "http://localhost", nil)
-	headerValue := fmt.Sprintf("Bearer %s", tokenES384)
+	headerValue := fmt.Sprintf("Bearer %s", tokenES385)
 	req.Header.Add("Authorization", headerValue)
 
 	_, err = client.GetSecret(req)
@@ -191,11 +134,15 @@ func TestJWKDownloadKeyInvalid(t *testing.T) {
 }
 
 func TestGetKeyOfJWKClient(t *testing.T) {
+	opts, _, _, err := genNewServer(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	tests := []struct {
-		name string
-		mkc  *mockKeyCacher
-		// test result
+		name             string
+		mkc              *mockKeyCacher
 		expectedErrorMsg string
 	}{
 		{
@@ -203,7 +150,6 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 			mkc: newMockKeyCacher(
 				nil,
 				nil,
-				jose.JSONWebKey{},
 				"key1",
 			),
 			expectedErrorMsg: "",
@@ -213,7 +159,6 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 			mkc: newMockKeyCacher(
 				errors.New("Key not in cache"),
 				nil,
-				jose.JSONWebKey{},
 				"key1",
 			),
 			expectedErrorMsg: "",
@@ -223,7 +168,6 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 			mkc: newMockKeyCacher(
 				errors.New("Key not in cache"),
 				ErrNoKeyFound,
-				jose.JSONWebKey{},
 				"key1",
 			),
 			expectedErrorMsg: "no Keys has been found",
@@ -232,19 +176,8 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ts := genNewServer()
-
-			opts := JWKClientOptions{URI: ts.URL}
-			kc := test.mkc
-			client := NewJWKClientWithCustomCacher(opts, nil, kc)
-
-			keys, err := client.downloadKeys()
-			if err != nil || len(keys) < 1 {
-				t.Errorf("The keys should have been correctly received: %v", err)
-				t.FailNow()
-			}
-
-			_, err = client.GetKey(kc.keyID)
+			client := NewJWKClientWithCustomCacher(opts, nil, test.mkc)
+			_, err := client.GetKey("key1")
 			if test.expectedErrorMsg != "" {
 				if err == nil {
 					t.Errorf("Validation should have failed with error with substring: " + test.expectedErrorMsg)
@@ -260,29 +193,31 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 	}
 }
 
-func TestJWKWithNilCacherGettingKey(t *testing.T) {
-
-	opts := JWKClientOptions{URI: "localhost"}
-	client := NewJWKClientWithCustomCacher(opts, nil, nil)
-
-	searchedKey, exist := client.GetKey("test_key")
-	assert.Empty(t, searchedKey)
-	assert.Error(t, exist)
-}
-
-func genNewServer() *httptest.Server {
-	// Generate JWKs
-	jsonWebKeyRS256 := genRSASSAJWK(jose.RS256, "keyRS256")
-	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
-
-	// Generate JWKS
-	jwks := JWKS{
-		Keys: []jose.JSONWebKey{jsonWebKeyRS256.Public(), jsonWebKeyES384.Public()},
+func TestCreateJWKClientCustomCacher(t *testing.T) {
+	opts, _, _, err := genNewServer(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
 	}
-	value, _ := json.Marshal(&jwks)
 
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, string(value))
-	}))
+	tests := []struct {
+		name      string
+		keyCacher KeyCacher
+	}{
+		{
+			name:      "pass- no key cacher",
+			keyCacher: nil,
+		},
+		{
+			name:      "pass- custome key cacher",
+			keyCacher: NewMemoryKeyCacher(time.Duration(100), 5),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client := NewJWKClientWithCustomCacher(opts, nil, test.keyCacher)
+			assert.NotEmpty(t, client.keyCacher)
+		})
+	}
 }

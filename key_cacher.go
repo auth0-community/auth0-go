@@ -39,7 +39,7 @@ func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher {
 func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
-		maxAge:  -1, //time.Time
+		maxAge:  time.Duration(-1),
 		size:    -1,
 	}
 }
@@ -69,15 +69,14 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 			}
 		}
 	}
-	if mkc.size != -1 {
-		mkc.entries[addingKey.KeyID] = keyCacherEntry{
-			addedAt:    time.Now(),
-			JSONWebKey: addingKey,
-		}
-		handleOverflow(mkc)
-		return &addingKey, nil
-	}
 	if addingKey.KeyID != "" {
+		if mkc.size != -1 {
+			mkc.entries[addingKey.KeyID] = keyCacherEntry{
+				addedAt:    time.Now(),
+				JSONWebKey: addingKey,
+			}
+			handleOverflow(mkc)
+		}
 		return &addingKey, nil
 	}
 	return nil, ErrNoKeyFound

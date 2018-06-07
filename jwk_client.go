@@ -2,11 +2,11 @@ package auth0
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
 
-	"github.com/go-errors/errors"
 	"gopkg.in/square/go-jose.v2"
 )
 
@@ -40,10 +40,9 @@ func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JW
 	keyCacher := newMemoryPersistentKeyCacher()
 
 	return &JWKClient{
-		keyCacher,
-		sync.Mutex{},
-		options,
-		extractor,
+		keyCacher: keyCacher,
+		options:   options,
+		extractor: extractor,
 	}
 }
 
@@ -56,10 +55,9 @@ func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTok
 	}
 
 	return &JWKClient{
-		keyCacher,
-		sync.Mutex{},
-		options,
-		extractor,
+		keyCacher: keyCacher,
+		options:   options,
+		extractor: extractor,
 	}
 }
 
@@ -69,19 +67,20 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 	defer j.mu.Unlock()
 
 	searchedKey, err := j.keyCacher.Get(ID)
-
-	if searchedKey == nil {
-		if keys, err := j.downloadKeys(); err != nil {
+	if err != nil {
+		//log err
+		keys, err := j.downloadKeys()
+		if err != nil {
 			return jose.JSONWebKey{}, err
-		} else {
-			addedKey, err := j.keyCacher.Add(ID, keys)
-			if addedKey == nil {
-				return jose.JSONWebKey{}, err
-			}
-			return *addedKey, err
 		}
+		addedKey, err := j.keyCacher.Add(ID, keys)
+		if err != nil {
+			return jose.JSONWebKey{}, err
+		}
+		return *addedKey, nil
 	}
-	return *searchedKey, err
+
+	return *searchedKey, nil
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
