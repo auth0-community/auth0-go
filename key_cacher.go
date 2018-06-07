@@ -10,6 +10,8 @@ import (
 var (
 	ErrNoKeyFound = errors.New("no Keys has been found")
 	ErrKeyExpired = errors.New("key exists but is expired")
+	MaxAgeNoCheck = time.Duration(-1)
+	SizeNoCheck   = -1
 )
 
 type KeyCacher interface {
@@ -39,15 +41,15 @@ func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher {
 func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
-		maxAge:  time.Duration(-1),
-		size:    -1,
+		maxAge:  MaxAgeNoCheck,
+		size:    SizeNoCheck,
 	}
 }
 
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
-		if mkc.size == -1 || !isExpired(mkc, keyID) {
+		if mkc.maxAge == time.Duration(-1) || !isExpired(mkc, keyID) {
 			return &searchKey.JSONWebKey, nil
 		}
 		return nil, ErrKeyExpired
@@ -56,7 +58,7 @@ func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 }
 
 func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) (*jose.JSONWebKey, error) {
-	addingKey := jose.JSONWebKey{}
+	var addingKey jose.JSONWebKey
 
 	for _, key := range downloadedKeys {
 		if key.KeyID == keyID {
@@ -69,7 +71,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 			}
 		}
 	}
-	if addingKey.KeyID != "" {
+	if addingKey.Key != nil {
 		if mkc.size != -1 {
 			mkc.entries[addingKey.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),

@@ -46,7 +46,7 @@ func (mockKC *mockKeyCacher) Add(keyID string, webKeys []jose.JSONWebKey) (*jose
 }
 
 func TestJWKDownloadKeySuccess(t *testing.T) {
-	opts, tokenRS256, tokenES384, err := genNewServer(true)
+	opts, tokenRS256, tokenES384, err := genNewTestServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -72,7 +72,7 @@ func TestJWKDownloadKeySuccess(t *testing.T) {
 }
 
 func TestJWKDownloadKeyNoKeys(t *testing.T) {
-	opts, _, tokenES384, err := genNewServer(false)
+	opts, _, tokenES384, err := genNewTestServer(false)
 	client := NewJWKClient(opts, nil)
 
 	req, _ := http.NewRequest("", "http://localhost", nil)
@@ -85,17 +85,17 @@ func TestJWKDownloadKeyNoKeys(t *testing.T) {
 }
 
 func TestJWKDownloadKeyNotFound(t *testing.T) {
-	opts, _, _, err := genNewServer(true)
+	opts, _, _, err := genNewTestServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 	client := NewJWKClient(opts, nil)
 
-	tokenES385 := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, genECDSAJWK(jose.ES384, "keyES385"), "keyES385")
+	invalidToken := getTestTokenWithKid(defaultAudience, defaultIssuer, time.Now().Add(24*time.Hour), jose.ES384, genECDSAJWK(jose.ES384, "keyES385"), "keyES385")
 
 	req, _ := http.NewRequest("", "http://localhost", nil)
-	headerValue := fmt.Sprintf("Bearer %s", tokenES385)
+	headerValue := fmt.Sprintf("Bearer %s", invalidToken)
 	req.Header.Add("Authorization", headerValue)
 
 	_, err = client.GetSecret(req)
@@ -134,7 +134,7 @@ func TestJWKDownloadKeyInvalid(t *testing.T) {
 }
 
 func TestGetKeyOfJWKClient(t *testing.T) {
-	opts, _, _, err := genNewServer(true)
+	opts, _, _, err := genNewTestServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -194,7 +194,7 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 }
 
 func TestCreateJWKClientCustomCacher(t *testing.T) {
-	opts, _, _, err := genNewServer(true)
+	opts, _, _, err := genNewTestServer(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

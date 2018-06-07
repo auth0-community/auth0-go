@@ -12,10 +12,6 @@ import (
 )
 
 func TestGet(t *testing.T) {
-	entry := keyCacherEntry{time.Now(), jose.JSONWebKey{KeyID: "test1"}}
-	m := make(map[string]keyCacherEntry)
-	m["key1"] = entry
-
 	tests := []struct {
 		name             string
 		mkc              *memoryKeyCacher
@@ -25,7 +21,7 @@ func TestGet(t *testing.T) {
 		{
 			name: "pass - persistent cacher",
 			mkc: &memoryKeyCacher{
-				entries: m,
+				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(-1),
 				size:    -1,
 			},
@@ -35,7 +31,7 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - invalid key",
 			mkc: &memoryKeyCacher{
-				entries: m,
+				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(-1),
 				size:    -1,
 			},
@@ -43,10 +39,20 @@ func TestGet(t *testing.T) {
 			expectedErrorMsg: "no Keys has been found",
 		},
 		{
-			name: "pass - get key for persistent cacher",
+			name: "fail - persistent cacher get immediately expired key",
 			mkc: &memoryKeyCacher{
-				entries: m,
+				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(0),
+				size:    -1,
+			},
+			key:              "key1",
+			expectedErrorMsg: "key exists but is expired",
+		},
+		{
+			name: "pass - persistent cacher get not expired key",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(10) * time.Second,
 				size:    -1,
 			},
 			key:              "key1",
@@ -73,9 +79,39 @@ func TestGet(t *testing.T) {
 			expectedErrorMsg: "no Keys has been found",
 		},
 		{
+			name: "fail - no cacher with 10sec max age",
+			mkc: &memoryKeyCacher{
+				entries: nil,
+				maxAge:  time.Duration(10) * time.Second,
+				size:    0,
+			},
+			key:              "key1",
+			expectedErrorMsg: "no Keys has been found",
+		},
+		{
+			name: "pass - custom cacher with -1 max age",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(-1),
+				size:    1,
+			},
+			key:              "key1",
+			expectedErrorMsg: "",
+		},
+		{
+			name: "fail - custom cacher get immediately expired key",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(0),
+				size:    1,
+			},
+			key:              "key1",
+			expectedErrorMsg: "key exists but is expired",
+		},
+		{
 			name: "pass - custom cacher not expired",
 			mkc: &memoryKeyCacher{
-				entries: m,
+				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(100) * time.Second,
 				size:    1,
 			},
@@ -85,8 +121,8 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - custom cacher with expired key",
 			mkc: &memoryKeyCacher{
-				entries: m,
-				maxAge:  time.Duration(-100) * time.Second,
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(-100) * time.Second, // extremely low value of max age is equivalent to always expired keys
 				size:    1,
 			},
 			key:              "key1",
@@ -95,8 +131,10 @@ func TestGet(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if test.mkc.entries != nil {
+				test.mkc.entries["key1"] = keyCacherEntry{time.Now(), jose.JSONWebKey{KeyID: "test1"}}
+			}
 
-			// test.mkc.Add("test1", downloadedKeys)
 			_, err := test.mkc.Get(test.key)
 
 			if test.expectedErrorMsg != "" {
@@ -115,7 +153,11 @@ func TestGet(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-	downloadedKeys := []jose.JSONWebKey{{KeyID: "test1"}, {KeyID: "test2"}, {KeyID: "test3"}}
+	downloadedKeys := []jose.JSONWebKey{
+		{Key: jose.JSONWebKey{}, KeyID: "test1"},
+		{Key: jose.JSONWebKey{}, KeyID: "test2"},
+		{Key: jose.JSONWebKey{}, KeyID: "test3"},
+	}
 
 	tests := []struct {
 		name             string
@@ -162,6 +204,30 @@ func TestAdd(t *testing.T) {
 			expectedErrorMsg: "",
 		},
 		{
+			name: "pass - add key for persistent cacher",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(10) * time.Second,
+				size:    -1,
+			},
+			addingKey:        "test1",
+			gettingKey:       "test1",
+			expectedFoundKey: true,
+			expectedErrorMsg: "",
+		},
+		{
+			name: "fail - no cacher with -1 max age",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(-1),
+				size:    0,
+			},
+			addingKey:        "test1",
+			gettingKey:       "test1",
+			expectedFoundKey: false,
+			expectedErrorMsg: "",
+		},
+		{
 			name: "fail - no cacher",
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
@@ -171,6 +237,42 @@ func TestAdd(t *testing.T) {
 			addingKey:        "test1",
 			gettingKey:       "test1",
 			expectedFoundKey: false,
+			expectedErrorMsg: "",
+		},
+		{
+			name: "fail - no cacher with 10sec max age",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(10) * time.Second,
+				size:    0,
+			},
+			addingKey:        "test1",
+			gettingKey:       "test1",
+			expectedFoundKey: false,
+			expectedErrorMsg: "",
+		},
+		{
+			name: "pass - custom cacher with -1 max age",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(-1),
+				size:    1,
+			},
+			addingKey:        "test1",
+			gettingKey:       "test1",
+			expectedFoundKey: true,
+			expectedErrorMsg: "",
+		},
+		{
+			name: "pass - custom cacher with 0 max age",
+			mkc: &memoryKeyCacher{
+				entries: make(map[string]keyCacherEntry),
+				maxAge:  time.Duration(0),
+				size:    1,
+			},
+			addingKey:        "test1",
+			gettingKey:       "test1",
+			expectedFoundKey: true,
 			expectedErrorMsg: "",
 		},
 		{
@@ -261,24 +363,25 @@ func TestIsExpired(t *testing.T) {
 				maxAge:  time.Duration(1) * time.Second,
 				size:    1,
 			},
-			sleepingTime: 2,
 			expectedBool: true,
 		},
 		{
 			name: "false - key not expired",
 			mkc: &memoryKeyCacher{
 				entries: map[string]keyCacherEntry{},
-				maxAge:  time.Duration(2) * time.Second,
+				maxAge:  time.Duration(10) * time.Second,
 				size:    1,
 			},
-			sleepingTime: 1,
 			expectedBool: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.mkc.entries["test1"] = keyCacherEntry{time.Now(), jose.JSONWebKey{KeyID: "test1"}}
-			time.Sleep(time.Duration(test.sleepingTime) * time.Second)
+			if test.expectedBool {
+				test.mkc.entries["test1"] = keyCacherEntry{time.Now().Add(time.Duration(-10) * time.Second), jose.JSONWebKey{KeyID: "test1"}}
+			} else {
+				test.mkc.entries["test1"] = keyCacherEntry{time.Now(), jose.JSONWebKey{KeyID: "test1"}}
+			}
 			if isExpired(test.mkc, "test1") != test.expectedBool {
 				t.Errorf("Should have been " + strconv.FormatBool(test.expectedBool) + " but got different")
 			}

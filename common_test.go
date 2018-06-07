@@ -114,7 +114,7 @@ func getTestTokenWithKid(audience []string, issuer string, expTime time.Time, al
 	return raw
 }
 
-func genNewServer(genJWKS bool) (JWKClientOptions, string, string, error) {
+func genNewTestServer(genJWKS bool) (JWKClientOptions, string, string, error) {
 	// Generate JWKs
 	jsonWebKeyRS256 := genRSASSAJWK(jose.RS256, "keyRS256")
 	jsonWebKeyES384 := genECDSAJWK(jose.ES384, "keyES384")
