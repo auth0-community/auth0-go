@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	ErrNoKeyFound = errors.New("no Keys has been found")
-	ErrKeyExpired = errors.New("key exists but is expired")
-	MaxAgeNoCheck = time.Duration(-1)
-	SizeNoCheck   = -1
+	ErrNoKeyFound  = errors.New("no Keys has been found")
+	ErrKeyExpired  = errors.New("key exists but is expired")
+	MaxAgeNoCheck  = time.Duration(-1)
+	MaxSizeNoCheck = -1
 )
 
 type KeyCacher interface {
@@ -42,7 +42,7 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
 		maxAge:  MaxAgeNoCheck,
-		maxSize: SizeNoCheck,
+		maxSize: MaxSizeNoCheck,
 	}
 }
 

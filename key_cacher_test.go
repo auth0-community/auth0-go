@@ -23,7 +23,7 @@ func TestGet(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  MaxAgeNoCheck,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
@@ -33,7 +33,7 @@ func TestGet(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  MaxAgeNoCheck,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			key:              "invalid key",
 			expectedErrorMsg: "no Keys has been found",
@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(0),
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "key exists but is expired",
@@ -53,7 +53,7 @@ func TestGet(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(10) * time.Second,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
@@ -172,7 +172,7 @@ func TestAdd(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  MaxAgeNoCheck,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -184,7 +184,7 @@ func TestAdd(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  MaxAgeNoCheck,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			addingKey:        "invalid key",
 			gettingKey:       "invalid key",
@@ -196,7 +196,7 @@ func TestAdd(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(0),
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -208,7 +208,7 @@ func TestAdd(t *testing.T) {
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
 				maxAge:  time.Duration(10) * time.Second,
-				maxSize: -1,
+				maxSize: MaxSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
