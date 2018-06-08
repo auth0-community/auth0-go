@@ -108,11 +108,11 @@ if err != nil {
 
 ```func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient```
 
-There is a bulit-in in-memory key cacher that supports max age and size (capacity), and it can be initialized through:
+There is a bulit-in in-memory key cacher that supports max age and max size (capacity), and it can be initialized through:
 
-```func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher```
+```func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher```
 
-*No caching can be obtained by passing 0 to max age and size in above function*
+*No caching can be obtained by passing 0 to max age and max size in above function*
 
 ### Custom key cacher: 
 

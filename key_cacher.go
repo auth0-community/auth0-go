@@ -22,7 +22,7 @@ type KeyCacher interface {
 type memoryKeyCacher struct {
 	entries map[string]keyCacherEntry
 	maxAge  time.Duration
-	size    int
+	maxSize int
 }
 
 type keyCacherEntry struct {
@@ -30,11 +30,11 @@ type keyCacherEntry struct {
 	jose.JSONWebKey
 }
 
-func NewMemoryKeyCacher(maxAge time.Duration, size int) KeyCacher {
+func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
 		maxAge:  maxAge,
-		size:    size,
+		maxSize: maxSize,
 	}
 }
 
@@ -42,14 +42,14 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
 		maxAge:  MaxAgeNoCheck,
-		size:    SizeNoCheck,
+		maxSize: SizeNoCheck,
 	}
 }
 
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
-		if mkc.maxAge == time.Duration(-1) || !isExpired(mkc, keyID) {
+		if mkc.maxAge == MaxAgeNoCheck || !isExpired(mkc, keyID) {
 			return &searchKey.JSONWebKey, nil
 		}
 		return nil, ErrKeyExpired
@@ -64,7 +64,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 		if key.KeyID == keyID {
 			addingKey = key
 		}
-		if mkc.size == -1 {
+		if mkc.maxSize == -1 {
 			mkc.entries[key.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),
 				JSONWebKey: key,
@@ -72,7 +72,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 		}
 	}
 	if addingKey.Key != nil {
-		if mkc.size != -1 {
+		if mkc.maxSize != -1 {
 			mkc.entries[addingKey.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),
 				JSONWebKey: addingKey,
@@ -94,7 +94,7 @@ func isExpired(mkc *memoryKeyCacher, keyID string) bool {
 
 //delete oldest element if overflowed
 func handleOverflow(mkc *memoryKeyCacher) {
-	if mkc.size < len(mkc.entries) {
+	if mkc.maxSize < len(mkc.entries) {
 		var oldestEntryKeyID string
 		var latestAddedTime = time.Now()
 		for entryKeyID, entry := range mkc.entries {

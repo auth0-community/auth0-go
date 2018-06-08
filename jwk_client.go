@@ -3,7 +3,6 @@ package auth0
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -69,7 +68,6 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 
 	searchedKey, err := j.keyCacher.Get(ID)
 	if err != nil {
-		log.Println("Error for getting a key", err)
 		keys, err := j.downloadKeys()
 		if err != nil {
 			return jose.JSONWebKey{}, err
