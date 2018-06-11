@@ -176,7 +176,7 @@ func TestGetKeyOfJWKClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := NewJWKClientWithCustomCacher(opts, nil, test.mkc)
+			client := NewJWKClientWithCache(opts, nil, test.mkc)
 			_, err := client.GetKey("key1")
 			if test.expectedErrorMsg != "" {
 				if err == nil {
@@ -216,7 +216,7 @@ func TestCreateJWKClientCustomCacher(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := NewJWKClientWithCustomCacher(opts, nil, test.keyCacher)
+			client := NewJWKClientWithCache(opts, nil, test.keyCacher)
 			assert.NotEmpty(t, client.keyCacher)
 		})
 	}

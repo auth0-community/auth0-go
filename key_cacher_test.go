@@ -122,7 +122,7 @@ func TestGet(t *testing.T) {
 			name: "fail - custom cacher with expired key",
 			mkc: &memoryKeyCacher{
 				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(-100) * time.Second, // extremely low value of max age is equivalent to always expired keys
+				maxAge:  time.Duration(-100) * time.Second, // setting max age negavtive time duration is equivalent to expired keys
 				maxSize: 1,
 			},
 			key:              "key1",

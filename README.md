@@ -100,25 +100,18 @@ if err != nil {
 }
 ```
 ## Support key cacher interface
-### Persistent key cacher:
 
-``` func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient```
+```go
+keyCacher := NewMemoryKeyCacher(time.Duration(100) * time.Second, 5)
+opts := JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"}
+client := NewJWKClientWithCache(opts, nil, keyCacher)
 
-### Built-in key cacher: 
+searchedKey, err := client.GetKey("KEY_ID")
 
-```func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, kc KeyCacher) *JWKClient```
-
-There is a bulit-in in-memory key cacher that supports max age and max size (capacity), and it can be initialized through:
-
-```func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher```
-
-*No caching can be obtained by passing 0 to max age and max size in above function*
-
-### Custom key cacher: 
-
-A custom key cacher interface can be passed and used by the client. It just needs to support two main functions: 
-- Get: ```Get(keyID string) (*jose.JSONWebKey, error)```
-- Add: ```Add(keyID string, webKeys []jose.JSONWebKey) (*jose.JSONWebKey, error)```
+if err != nil {
+	fmt.Println("Cannot get key because of", err)
+}
+```
 
 ## Example
 

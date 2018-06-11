@@ -30,6 +30,9 @@ type keyCacherEntry struct {
 	jose.JSONWebKey
 }
 
+// NewMemoryKeyCacher creates a new Keycacher interface with option
+// to set max age of entries and max size of the cacher.
+// Passing 0 to maxAge and maxSize will give a non-caching cacher
 func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
@@ -46,6 +49,7 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 	}
 }
 
+// Get helps obtaining key in cache, and check if key is expired
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
@@ -57,6 +61,7 @@ func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	return nil, ErrNoKeyFound
 }
 
+// Add helps adding key into cacher and handling overflow
 func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) (*jose.JSONWebKey, error) {
 	var addingKey jose.JSONWebKey
 

@@ -32,21 +32,16 @@ type JWKClient struct {
 
 // NewJWKClient creates a new JWKClient instance from the
 // provided options.
+// This instance will cache all downloaded keys and
+// cached keys will never be timeout
 func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient {
-	if extractor == nil {
-		extractor = RequestTokenExtractorFunc(FromHeader)
-	}
-
-	keyCacher := newMemoryPersistentKeyCacher()
-
-	return &JWKClient{
-		keyCacher: keyCacher,
-		options:   options,
-		extractor: extractor,
-	}
+	return NewJWKClientWithCache(options, extractor, nil)
 }
 
-func NewJWKClientWithCustomCacher(options JWKClientOptions, extractor RequestTokenExtractor, keyCacher KeyCacher) *JWKClient {
+// NewJWKClientWithCache creates a new JWKClient instance from the
+// provided options and a custom keycacher interface.
+// Passing nil to keyCacher will create a persistent key cacher
+func NewJWKClientWithCache(options JWKClientOptions, extractor RequestTokenExtractor, keyCacher KeyCacher) *JWKClient {
 	if extractor == nil {
 		extractor = RequestTokenExtractorFunc(FromHeader)
 	}
