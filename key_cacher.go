@@ -53,7 +53,7 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
-		if mkc.maxAge == MaxAgeNoCheck || !isExpired(mkc, keyID) {
+		if mkc.maxAge == MaxAgeNoCheck || !mkc.keyIsExpired(keyID) {
 			return &searchKey.JSONWebKey, nil
 		}
 		return nil, ErrKeyExpired
@@ -82,14 +82,14 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 				addedAt:    time.Now(),
 				JSONWebKey: addingKey,
 			}
-			handleOverflow(mkc)
+			mkc.handleOverflow()
 		}
 		return &addingKey, nil
 	}
 	return nil, ErrNoKeyFound
 }
 
-func isExpired(mkc *memoryKeyCacher, keyID string) bool {
+func (mkc *memoryKeyCacher) keyIsExpired(keyID string) bool {
 	if time.Now().After(mkc.entries[keyID].addedAt.Add(mkc.maxAge)) {
 		delete(mkc.entries, keyID)
 		return true
@@ -98,7 +98,7 @@ func isExpired(mkc *memoryKeyCacher, keyID string) bool {
 }
 
 //delete oldest element if overflowed
-func handleOverflow(mkc *memoryKeyCacher) {
+func (mkc *memoryKeyCacher) handleOverflow() {
 	if mkc.maxSize < len(mkc.entries) {
 		var oldestEntryKeyID string
 		var latestAddedTime = time.Now()

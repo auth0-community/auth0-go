@@ -349,7 +349,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestIsExpired(t *testing.T) {
+func TestKeyIsExpired(t *testing.T) {
 	tests := []struct {
 		name         string
 		mkc          *memoryKeyCacher
@@ -382,7 +382,7 @@ func TestIsExpired(t *testing.T) {
 			} else {
 				test.mkc.entries["test1"] = keyCacherEntry{time.Now(), jose.JSONWebKey{KeyID: "test1"}}
 			}
-			if isExpired(test.mkc, "test1") != test.expectedBool {
+			if test.mkc.keyIsExpired("test1") != test.expectedBool {
 				t.Errorf("Should have been " + strconv.FormatBool(test.expectedBool) + " but got different")
 			}
 		})
@@ -420,7 +420,7 @@ func TestHandleOverflow(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			test.mkc.entries["first"] = keyCacherEntry{JSONWebKey: downloadedKeys[0]}
 			test.mkc.entries["second"] = keyCacherEntry{JSONWebKey: downloadedKeys[1]}
-			handleOverflow(test.mkc)
+			test.mkc.handleOverflow()
 			if len(test.mkc.entries) != test.expectedLength {
 				t.Errorf("Should have been " + strconv.Itoa(test.expectedLength) + "but got different")
 			}
