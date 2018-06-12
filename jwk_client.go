@@ -32,8 +32,6 @@ type JWKClient struct {
 
 // NewJWKClient creates a new JWKClient instance from the
 // provided options.
-// This instance will cache all downloaded keys and
-// cached keys will never be timeout
 func NewJWKClient(options JWKClientOptions, extractor RequestTokenExtractor) *JWKClient {
 	return NewJWKClientWithCache(options, extractor, nil)
 }
