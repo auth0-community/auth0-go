@@ -99,11 +99,13 @@ if err != nil {
     fmt.Println("Token is not valid:", token)
 }
 ```
-## Support key cacher interface
+## Support interface for configurable key cacher
 
 ```go
-keyCacher := NewMemoryKeyCacher(time.Duration(100) * time.Second, 5)
 opts := JWKClientOptions{URI: "https://mydomain.eu.auth0.com/.well-known/jwks.json"}
+// Creating key cacher with max age of 100sec and max size of 5 entries.
+// Defaults to persistent key cacher if not specified when creating a client.
+keyCacher := NewMemoryKeyCacher(time.Duration(100) * time.Second, 5)
 client := NewJWKClientWithCache(opts, nil, keyCacher)
 
 searchedKey, err := client.GetKey("KEY_ID")
