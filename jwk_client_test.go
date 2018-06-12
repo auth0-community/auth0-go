@@ -71,6 +71,15 @@ func TestJWKDownloadKeySuccess(t *testing.T) {
 	}
 }
 
+func TestJWKDownloadKeyFailed(t *testing.T) {
+	opts := JWKClientOptions{URI: "invalidURI"}
+	client := NewJWKClient(opts, nil)
+
+	keys, err := client.downloadKeys()
+	assert.Error(t, err)
+	assert.Empty(t, keys)
+}
+
 func TestJWKDownloadKeyNoKeys(t *testing.T) {
 	opts, _, tokenES384, err := genNewTestServer(false)
 	client := NewJWKClient(opts, nil)
@@ -218,6 +227,49 @@ func TestCreateJWKClientCustomCacher(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			client := NewJWKClientWithCache(opts, nil, test.keyCacher)
 			assert.NotEmpty(t, client.keyCacher)
+		})
+	}
+}
+
+func TestGetSecret(t *testing.T) {
+	opts, tokenRS256, _, err := genNewTestServer(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	client := NewJWKClient(opts, nil)
+
+	tests := []struct {
+		name        string
+		token       string
+		expectError bool
+	}{
+		{
+			name:        "pass",
+			token:       tokenRS256,
+			expectError: false,
+		},
+		{
+			name:        "fail - invalid token",
+			token:       "invalid.token",
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req, _ := http.NewRequest("", "http://localhost", nil)
+			headerValue := fmt.Sprintf("Bearer %s", test.token)
+			req.Header.Add("Authorization", headerValue)
+
+			key, err := client.GetSecret(req)
+			if test.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, key)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, key)
+			}
 		})
 	}
 }
