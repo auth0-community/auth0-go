@@ -10,7 +10,10 @@ import (
 var (
 	ErrNoKeyFound  = errors.New("no Keys has been found")
 	ErrKeyExpired  = errors.New("key exists but is expired")
+
+	// Configuring with MaxAgeNoCheck will skip key expiry check
 	MaxAgeNoCheck  = time.Duration(-1)
+	// Configuring with MaxSizeNoCheck will skip key cache size check
 	MaxSizeNoCheck = -1
 )
 
@@ -31,8 +34,7 @@ type keyCacherEntry struct {
 }
 
 // NewMemoryKeyCacher creates a new Keycacher interface with option
-// to set max age of entries and max size of the cacher.
-// Passing 0 to maxAge and maxSize will give a non-caching cacher
+// to set max age of cached keys and max size of the cache.
 func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher {
 	return &memoryKeyCacher{
 		entries: map[string]keyCacherEntry{},
@@ -49,7 +51,7 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 	}
 }
 
-// Get helps obtaining key in cache, and check if key is expired
+// Get obtains a key from the cache, and checks if the key is expired
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
@@ -61,7 +63,7 @@ func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	return nil, ErrNoKeyFound
 }
 
-// Add helps adding key into cacher and handling overflow
+// Add adds a key into the cache and handles overflow
 func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) (*jose.JSONWebKey, error) {
 	var addingKey jose.JSONWebKey
 
@@ -89,6 +91,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 	return nil, ErrNoKeyFound
 }
 
+// keyIsExpired deletes the key from cache if it is expired
 func (mkc *memoryKeyCacher) keyIsExpired(keyID string) bool {
 	if time.Now().After(mkc.entries[keyID].addedAt.Add(mkc.maxAge)) {
 		delete(mkc.entries, keyID)
@@ -97,7 +100,7 @@ func (mkc *memoryKeyCacher) keyIsExpired(keyID string) bool {
 	return false
 }
 
-//delete oldest element if overflowed
+// handleOverflow deletes the oldest key from the cache if overflowed
 func (mkc *memoryKeyCacher) handleOverflow() {
 	if mkc.maxSize < len(mkc.entries) {
 		var oldestEntryKeyID string
