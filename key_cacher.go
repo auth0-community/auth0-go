@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	ErrNoKeyFound  = errors.New("no Keys has been found")
-	ErrKeyExpired  = errors.New("key exists but is expired")
+	ErrNoKeyFound = errors.New("no Keys has been found")
+	ErrKeyExpired = errors.New("key exists but is expired")
 
-	// Configuring with MaxAgeNoCheck will skip key expiry check
-	MaxAgeNoCheck  = time.Duration(-1)
-	// Configuring with MaxSizeNoCheck will skip key cache size check
-	MaxSizeNoCheck = -1
+	// Configuring with MaxKeyAgeNoCheck will skip key expiry check
+	MaxKeyAgeNoCheck = time.Duration(-1)
+	// Configuring with MaxCacheSizeNoCheck will skip key cache size check
+	MaxCacheSizeNoCheck = -1
 )
 
 type KeyCacher interface {
@@ -23,9 +23,9 @@ type KeyCacher interface {
 }
 
 type memoryKeyCacher struct {
-	entries map[string]keyCacherEntry
-	maxAge  time.Duration
-	maxSize int
+	entries      map[string]keyCacherEntry
+	maxKeyAge    time.Duration
+	maxCacheSize int
 }
 
 type keyCacherEntry struct {
@@ -35,19 +35,19 @@ type keyCacherEntry struct {
 
 // NewMemoryKeyCacher creates a new Keycacher interface with option
 // to set max age of cached keys and max size of the cache.
-func NewMemoryKeyCacher(maxAge time.Duration, maxSize int) KeyCacher {
+func NewMemoryKeyCacher(maxKeyAge time.Duration, maxCacheSize int) KeyCacher {
 	return &memoryKeyCacher{
-		entries: map[string]keyCacherEntry{},
-		maxAge:  maxAge,
-		maxSize: maxSize,
+		entries:      map[string]keyCacherEntry{},
+		maxKeyAge:    maxKeyAge,
+		maxCacheSize: maxCacheSize,
 	}
 }
 
 func newMemoryPersistentKeyCacher() KeyCacher {
 	return &memoryKeyCacher{
-		entries: map[string]keyCacherEntry{},
-		maxAge:  MaxAgeNoCheck,
-		maxSize: MaxSizeNoCheck,
+		entries:      map[string]keyCacherEntry{},
+		maxKeyAge:    MaxKeyAgeNoCheck,
+		maxCacheSize: MaxCacheSizeNoCheck,
 	}
 }
 
@@ -55,7 +55,7 @@ func newMemoryPersistentKeyCacher() KeyCacher {
 func (mkc *memoryKeyCacher) Get(keyID string) (*jose.JSONWebKey, error) {
 	searchKey, ok := mkc.entries[keyID]
 	if ok {
-		if mkc.maxAge == MaxAgeNoCheck || !mkc.keyIsExpired(keyID) {
+		if mkc.maxKeyAge == MaxKeyAgeNoCheck || !mkc.keyIsExpired(keyID) {
 			return &searchKey.JSONWebKey, nil
 		}
 		return nil, ErrKeyExpired
@@ -71,7 +71,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 		if key.KeyID == keyID {
 			addingKey = key
 		}
-		if mkc.maxSize == -1 {
+		if mkc.maxCacheSize == -1 {
 			mkc.entries[key.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),
 				JSONWebKey: key,
@@ -79,7 +79,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 		}
 	}
 	if addingKey.Key != nil {
-		if mkc.maxSize != -1 {
+		if mkc.maxCacheSize != -1 {
 			mkc.entries[addingKey.KeyID] = keyCacherEntry{
 				addedAt:    time.Now(),
 				JSONWebKey: addingKey,
@@ -93,7 +93,7 @@ func (mkc *memoryKeyCacher) Add(keyID string, downloadedKeys []jose.JSONWebKey) 
 
 // keyIsExpired deletes the key from cache if it is expired
 func (mkc *memoryKeyCacher) keyIsExpired(keyID string) bool {
-	if time.Now().After(mkc.entries[keyID].addedAt.Add(mkc.maxAge)) {
+	if time.Now().After(mkc.entries[keyID].addedAt.Add(mkc.maxKeyAge)) {
 		delete(mkc.entries, keyID)
 		return true
 	}
@@ -102,7 +102,7 @@ func (mkc *memoryKeyCacher) keyIsExpired(keyID string) bool {
 
 // handleOverflow deletes the oldest key from the cache if overflowed
 func (mkc *memoryKeyCacher) handleOverflow() {
-	if mkc.maxSize < len(mkc.entries) {
+	if mkc.maxCacheSize < len(mkc.entries) {
 		var oldestEntryKeyID string
 		var latestAddedTime = time.Now()
 		for entryKeyID, entry := range mkc.entries {

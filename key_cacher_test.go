@@ -21,9 +21,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "pass - persistent cacher",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
@@ -31,9 +31,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - invalid key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			key:              "invalid key",
 			expectedErrorMsg: "no Keys has been found",
@@ -41,9 +41,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - persistent cacher get immediately expired key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(0),
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "key exists but is expired",
@@ -51,19 +51,19 @@ func TestGet(t *testing.T) {
 		{
 			name: "pass - persistent cacher get not expired key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(10) * time.Second,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(10) * time.Second,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
 		},
 		{
-			name: "fail - no cacher with -1 maxAge",
+			name: "fail - no cacher with -1 maxKeyAge",
 			mkc: &memoryKeyCacher{
-				entries: nil,
-				maxAge:  MaxAgeNoCheck,
-				maxSize: 0,
+				entries:      nil,
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: 0,
 			},
 			key:              "key1",
 			expectedErrorMsg: "no Keys has been found",
@@ -71,9 +71,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - no cacher",
 			mkc: &memoryKeyCacher{
-				entries: nil,
-				maxAge:  time.Duration(0),
-				maxSize: 0,
+				entries:      nil,
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: 0,
 			},
 			key:              "key1",
 			expectedErrorMsg: "no Keys has been found",
@@ -81,9 +81,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - no cacher with 10sec max age",
 			mkc: &memoryKeyCacher{
-				entries: nil,
-				maxAge:  time.Duration(10) * time.Second,
-				maxSize: 0,
+				entries:      nil,
+				maxKeyAge:    time.Duration(10) * time.Second,
+				maxCacheSize: 0,
 			},
 			key:              "key1",
 			expectedErrorMsg: "no Keys has been found",
@@ -91,9 +91,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "pass - custom cacher with -1 max age",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: 1,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
@@ -101,9 +101,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - custom cacher get immediately expired key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(0),
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: 1,
 			},
 			key:              "key1",
 			expectedErrorMsg: "key exists but is expired",
@@ -111,9 +111,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "pass - custom cacher not expired",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(100) * time.Second,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(100) * time.Second,
+				maxCacheSize: 1,
 			},
 			key:              "key1",
 			expectedErrorMsg: "",
@@ -121,9 +121,9 @@ func TestGet(t *testing.T) {
 		{
 			name: "fail - custom cacher with expired key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(-100) * time.Second, // setting max age negavtive time duration is equivalent to expired keys
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(-100) * time.Second, // setting max age negavtive time duration is equivalent to expired keys
+				maxCacheSize: 1,
 			},
 			key:              "key1",
 			expectedErrorMsg: "key exists but is expired",
@@ -170,9 +170,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - persistent cacher",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -182,9 +182,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - invalid key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			addingKey:        "invalid key",
 			gettingKey:       "invalid key",
@@ -194,9 +194,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - add key for persistent cacher",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(0),
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -206,9 +206,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - add key for persistent cacher",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(10) * time.Second,
-				maxSize: MaxSizeNoCheck,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(10) * time.Second,
+				maxCacheSize: MaxCacheSizeNoCheck,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -218,9 +218,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - no cacher with -1 max age",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: 0,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: 0,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -230,9 +230,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - no cacher",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(0),
-				maxSize: 0,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: 0,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -242,9 +242,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - no cacher with 10sec max age",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(10) * time.Second,
-				maxSize: 0,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(10) * time.Second,
+				maxCacheSize: 0,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -254,9 +254,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - custom cacher with -1 max age",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  MaxAgeNoCheck,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    MaxKeyAgeNoCheck,
+				maxCacheSize: 1,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -266,9 +266,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - custom cacher with 0 max age",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(0),
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(0),
+				maxCacheSize: 1,
 			},
 			addingKey:        "test1",
 			gettingKey:       "test1",
@@ -278,9 +278,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - custom cacher get latest added key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(100) * time.Second,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(100) * time.Second,
+				maxCacheSize: 1,
 			},
 			gettingKey:       "test3",
 			expectedFoundKey: true,
@@ -289,9 +289,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - custom cacher add invalid key",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(100) * time.Second,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(100) * time.Second,
+				maxCacheSize: 1,
 			},
 			addingKey:        "invalid key",
 			gettingKey:       "test1",
@@ -301,9 +301,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "fail - custom cacher get key not in cache",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(100) * time.Second,
-				maxSize: 1,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(100) * time.Second,
+				maxCacheSize: 1,
 			},
 			gettingKey:       "test1",
 			expectedFoundKey: false,
@@ -312,9 +312,9 @@ func TestAdd(t *testing.T) {
 		{
 			name: "pass - custom cacher with capacity 3",
 			mkc: &memoryKeyCacher{
-				entries: make(map[string]keyCacherEntry),
-				maxAge:  time.Duration(100) * time.Second,
-				maxSize: 3,
+				entries:      make(map[string]keyCacherEntry),
+				maxKeyAge:    time.Duration(100) * time.Second,
+				maxCacheSize: 3,
 			},
 			gettingKey:       "test2",
 			expectedFoundKey: true,
@@ -359,18 +359,18 @@ func TestKeyIsExpired(t *testing.T) {
 		{
 			name: "true - key is expired",
 			mkc: &memoryKeyCacher{
-				entries: map[string]keyCacherEntry{},
-				maxAge:  time.Duration(1) * time.Second,
-				maxSize: 1,
+				entries:      map[string]keyCacherEntry{},
+				maxKeyAge:    time.Duration(1) * time.Second,
+				maxCacheSize: 1,
 			},
 			expectedBool: true,
 		},
 		{
 			name: "false - key not expired",
 			mkc: &memoryKeyCacher{
-				entries: map[string]keyCacherEntry{},
-				maxAge:  time.Duration(10) * time.Second,
-				maxSize: 1,
+				entries:      map[string]keyCacherEntry{},
+				maxKeyAge:    time.Duration(10) * time.Second,
+				maxCacheSize: 1,
 			},
 			expectedBool: false,
 		},
@@ -400,18 +400,18 @@ func TestHandleOverflow(t *testing.T) {
 		{
 			name: "true - overflowed and delete 1 key",
 			mkc: &memoryKeyCacher{
-				entries: map[string]keyCacherEntry{},
-				maxAge:  time.Duration(2) * time.Second,
-				maxSize: 1,
+				entries:      map[string]keyCacherEntry{},
+				maxKeyAge:    time.Duration(2) * time.Second,
+				maxCacheSize: 1,
 			},
 			expectedLength: 1,
 		},
 		{
 			name: "false - no overflow",
 			mkc: &memoryKeyCacher{
-				entries: map[string]keyCacherEntry{},
-				maxAge:  time.Duration(2) * time.Second,
-				maxSize: 2,
+				entries:      map[string]keyCacherEntry{},
+				maxKeyAge:    time.Duration(2) * time.Second,
+				maxCacheSize: 2,
 			},
 			expectedLength: 2,
 		},
