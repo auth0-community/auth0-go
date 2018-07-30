@@ -1,6 +1,7 @@
 package auth0
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -16,7 +17,8 @@ var (
 )
 
 type JWKClientOptions struct {
-	URI string
+	URI    string
+	Client *http.Client
 }
 
 type JWKS struct {
@@ -45,6 +47,9 @@ func NewJWKClientWithCache(options JWKClientOptions, extractor RequestTokenExtra
 	}
 	if keyCacher == nil {
 		keyCacher = newMemoryPersistentKeyCacher()
+	}
+	if options.Client == nil {
+		options.Client = http.DefaultClient
 	}
 
 	return &JWKClient{
@@ -76,7 +81,11 @@ func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
 }
 
 func (j *JWKClient) downloadKeys() ([]jose.JSONWebKey, error) {
-	resp, err := http.Get(j.options.URI)
+	req, err := http.NewRequest("GET", j.options.URI, new(bytes.Buffer))
+	if err != nil {
+		return []jose.JSONWebKey{}, err
+	}
+	resp, err := j.options.Client.Do(req)
 
 	if err != nil {
 		return []jose.JSONWebKey{}, err
