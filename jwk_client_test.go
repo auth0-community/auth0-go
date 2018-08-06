@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -69,6 +70,15 @@ func TestJWKDownloadKeySuccess(t *testing.T) {
 			t.Errorf("Should be considered as valid, but failed with error: " + err.Error())
 		}
 	}
+}
+
+func TestJWKDownloadKeyBadRequest(t *testing.T) {
+	opts := JWKClientOptions{URI: "\t.://"}
+	client := NewJWKClient(opts, nil)
+
+	keys, err := client.downloadKeys()
+	assert.Error(t, err)
+	assert.Empty(t, keys)
 }
 
 func TestJWKDownloadKeyFailed(t *testing.T) {
@@ -239,6 +249,33 @@ func TestGetSecret(t *testing.T) {
 	}
 	client := NewJWKClient(opts, nil)
 
+	testGetSecret(t, client, tokenRS256)
+}
+
+func TestJWKClient_customClient(t *testing.T) {
+	opts, tokenRS256, _, err := genNewTestServer(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	var counter uint64
+	opts.Client = &http.Client{
+		Transport: &mockRoundTripper{
+			ops: &counter,
+			rt:  http.DefaultTransport,
+		},
+	}
+	client := NewJWKClient(opts, nil)
+
+	testGetSecret(t, client, tokenRS256)
+
+	if counter != 1 {
+		t.Errorf("unexpected number of calls to the injected client: want 1, have %d", counter)
+	}
+}
+
+func testGetSecret(t *testing.T, client *JWKClient, tokenRS256 string) {
 	tests := []struct {
 		name        string
 		token       string
@@ -272,4 +309,14 @@ func TestGetSecret(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockRoundTripper struct {
+	ops *uint64
+	rt  http.RoundTripper
+}
+
+func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	atomic.AddUint64(m.ops, 1)
+	return m.rt.RoundTrip(req)
 }
