@@ -80,7 +80,19 @@ func NewValidator(config Configuration, extractor RequestTokenExtractor) *JWTVal
 
 // ValidateRequest validates the token within
 // the http request.
+// A default leeway value of one minute is used to compare time values.
 func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, error) {
+	return v.validateRequestWithLeeway(r, jwt.DefaultLeeway)
+}
+
+// ValidateRequestWithLeeway validates the token within
+// the http request.
+// The provided leeway value is used to compare time values.
+func (v *JWTValidator) ValidateRequestWithLeeway(r *http.Request, leeway time.Duration) (*jwt.JSONWebToken, error) {
+	return v.validateRequestWithLeeway(r, leeway)
+}
+
+func (v *JWTValidator) validateRequestWithLeeway(r *http.Request, leeway time.Duration) (*jwt.JSONWebToken, error) {
 	token, err := v.extractor.Extract(r)
 	if err != nil {
 		return nil, err
@@ -109,7 +121,7 @@ func (v *JWTValidator) ValidateRequest(r *http.Request) (*jwt.JSONWebToken, erro
 	}
 
 	expected := v.config.expectedClaims.WithTime(time.Now())
-	err = claims.Validate(expected)
+	err = claims.ValidateWithLeeway(expected, leeway)
 	return token, err
 }
 
