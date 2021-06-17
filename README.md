@@ -1,3 +1,8 @@
+## Deprecation Notice
+
+The Auth0 Community is in the process of deprecating this library, and the repository will no longer be available on Github after the end-of-life date of September 30, 2021. Please make plans to find a suitable replacement or remove this library from any active projects before the end-of-life date. The official Auth0 Go SDK is recommended: [https://github.com/go-auth0/auth0](https://github.com/go-auth0/auth0). 
+Please reach out in the supporting [Auth0 Community topic](https://community.auth0.com/t/community-repo-deprecation-auth0-go/64665) if you have any questions or concerns.
+
 | **Build** | **Coverage** | **Godoc** | **Go report** | **License** |
 |-----------|--------------|-----------|---------------|-------------|
 |[![Build Status](https://travis-ci.org/auth0-community/go-auth0.svg?branch=master)](https://travis-ci.org/auth0-community/go-auth0) | [![Coverage Status](https://coveralls.io/repos/github/auth0-community/go-auth0/badge.svg?branch=master)](https://coveralls.io/github/auth0-community/go-auth0?branch=master) | [![GoDoc](https://godoc.org/github.com/auth0-community/go-auth0?status.png)](https://godoc.org/github.com/auth0-community/go-auth0) | [![Report Cart](http://goreportcard.com/badge/auth0-community/go-auth0)](http://goreportcard.com/report/auth0-community/go-auth0) | [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE) |
