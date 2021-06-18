@@ -141,6 +141,29 @@ func TestJWKDownloadKeyInvalid(t *testing.T) {
 	}
 }
 
+// run `go test` with `-race` for this to test for data races
+func TestJWKClientRace(t *testing.T) {
+	opts, token1, token2, err := genNewTestServer(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	client := NewJWKClient(opts, nil)
+
+	go func() {
+		header := token1.Headers[0]
+		_, _ = client.GetKey(header.KeyID)
+		_, _ = client.GetKey(header.KeyID)
+	}()
+
+	go func() {
+		header := token2.Headers[0]
+		_, _ = client.GetKey(header.KeyID)
+		_, _ = client.GetKey(header.KeyID)
+	}()
+}
+
 func TestGetKeyOfJWKClient(t *testing.T) {
 	opts, _, _, err := genNewTestServer(true)
 	if err != nil {

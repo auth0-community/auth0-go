@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"golang.org/x/sync/singleflight"
 	"gopkg.in/square/go-jose.v2/jwt"
 	"net/http"
 	"strings"
@@ -28,9 +29,11 @@ type JWKS struct {
 
 type JWKClient struct {
 	keyCacher KeyCacher
-	mu        sync.Mutex
 	options   JWKClientOptions
 	extractor RequestTokenExtractor
+
+	mu sync.RWMutex       // Used to lock reads/writes to the keycacher
+	sf singleflight.Group // Used to collapse requests to download keys
 }
 
 // NewJWKClient creates a new JWKClient instance from the
@@ -62,20 +65,31 @@ func NewJWKClientWithCache(options JWKClientOptions, extractor RequestTokenExtra
 
 // GetKey returns the key associated with the provided ID.
 func (j *JWKClient) GetKey(ID string) (jose.JSONWebKey, error) {
+	j.mu.RLock()
 	searchedKey, err := j.keyCacher.Get(ID)
+	j.mu.RUnlock()
 
 	if err != nil {
+		// All simultaneous calls of `GetKey` will result in only a single call to `downloadKeys` due to `sf.Do`
+		v, err, _ := j.sf.Do("", func() (interface{}, error) {
+			keys, err := j.downloadKeys()
+			if err != nil {
+				return nil, err
+			}
+			return keys, nil
+		})
+		if err != nil {
+			return jose.JSONWebKey{}, err
+		}
+
 		j.mu.Lock()
 		defer j.mu.Unlock()
 
-		keys, err := j.downloadKeys()
+		addedKey, err := j.keyCacher.Add(ID, v.([]jose.JSONWebKey))
 		if err != nil {
 			return jose.JSONWebKey{}, err
 		}
-		addedKey, err := j.keyCacher.Add(ID, keys)
-		if err != nil {
-			return jose.JSONWebKey{}, err
-		}
+
 		return *addedKey, nil
 	}
 
